@@ -63,6 +63,12 @@ export default {
       }
     })
   },
+  fetchProjectById(params) {
+    return instance.get(`/admin/projects/${params}`).then(res => {
+      res = res.data
+      return res.success ? res.data : res.err
+    })
+  },
   putProject(params) {
     return instance.put(`/admin/projects`, params).then(res => {
       res = res.data

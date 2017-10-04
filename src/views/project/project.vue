@@ -78,7 +78,6 @@
       <el-button type="primary" @click.native="save" :loading="editLoading">提交</el-button>
     </div>
   </el-dialog>
-
   <!--新增界面-->
   <!-- <el-dialog title="新增" v-model="addFormVisible" :close-on-click-modal="false">
     <el-form :model="addForm" label-width="80px" :rules="addFormRules" ref="addForm">
@@ -225,17 +224,18 @@ export default {
     },
     // 编辑按钮
     handleEdit(index, row) {
-      this.coverImg = []
-      this.detailImgs = []
-      this.editFormVisible = true
-      if (row.cover_image) {
-        this.coverImg.push({ name: row.cover_image.split('/').pop(), url: `${imgCDN}/${row.cover_image}` })
-      }
-      if (row.detail_images.length > 0) {
-        row.detail_images.forEach(item => this.detailImgs.push({ name: item.split('/').pop(), url: `${imgCDN}/${item}` }))
-      }
-      this.editForm = Object.assign({}, row)
-      this.editIndex = index
+      // this.coverImg = []
+      // this.detailImgs = []
+      // this.editFormVisible = true
+      // if (row.cover_image) {
+      //   this.coverImg.push({ name: row.cover_image.split('/').pop(), url: `${imgCDN}/${row.cover_image}` })
+      // }
+      // if (row.detail_images.length > 0) {
+      //   row.detail_images.forEach(item => this.detailImgs.push({ name: item.split('/').pop(), url: `${imgCDN}/${item}` }))
+      // }
+      // this.editForm = Object.assign({}, row)
+      // this.editIndex = index
+      this.$router.push(`/projects/edit/${row._id}`)
     },
     // 取消按钮
     cancelBtn() {

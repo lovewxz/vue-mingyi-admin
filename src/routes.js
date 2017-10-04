@@ -1,11 +1,12 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import store from './vuex'
-import Login from './views/Login.vue'
-import NotFound from './views/404.vue'
-import Home from './views/Home.vue'
-import Products from './views/shoplist/products.vue'
-import Project from './views/project/project.vue'
+import Login from './views/Login'
+import NotFound from './views/404'
+import Home from './views/Home'
+import Products from './views/shoplist/products'
+import Project from './views/project/project'
+import ProjectAddEdit from './views/project-add-edit/project-add-edit'
 
 Vue.use(VueRouter)
 
@@ -30,12 +31,26 @@ let routes = [
   {
     path: '/',
     component: Home,
-    name: '',
+    name: '项目产品',
     iconCls: 'fa fa-id-card-o',
-    leaf: true,
     children: [
-      { path: '/projects', component: Project, name: '项目产品',meta: { requiresAuth: true } }
-       ]
+      {
+        path: '/projects',
+        component: Project,
+        name: '项目列表 ',
+        meta: { requiresAuth: true }
+      }, {
+        path: '/projects/add',
+        component: ProjectAddEdit,
+        name: '添加项目',
+        meta: { requiresAuth: true }
+      }, {
+        path: '/projects/edit/:id',
+        component: ProjectAddEdit,
+        hidden: true,
+        meta: { requiresAuth: true }
+      }
+    ]
   },
   {
     path: '/',
@@ -44,7 +59,7 @@ let routes = [
     iconCls: 'fa fa-id-card-o',
     leaf: true,
     children: [
-      { path: '/products', component: Products, name: '宝贝详情',meta: { requiresAuth: true } }
+      { path: '/products', component: Products, name: '宝贝详情', meta: { requiresAuth: true } }
        ]
   },
   {
