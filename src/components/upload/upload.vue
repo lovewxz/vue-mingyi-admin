@@ -36,7 +36,7 @@ export default {
         url: `${config.imgCDN}/${prefix}${encodeURI(key)}`
       })
     },
-    handleRemove(file,fileList) {
+    handleRemove(file,filelist) {
       const index = this.fileList.findIndex(item => {
         return item.uid === file.uid
       })

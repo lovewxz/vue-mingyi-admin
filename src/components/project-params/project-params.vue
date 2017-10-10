@@ -1,5 +1,5 @@
 <template>
-<el-form-item label="参数" prop="params" class="project-params">
+<div>
   <el-row v-for="(item,index) in params" style="margin-bottom: 10px;">
     <el-col :span="5">
       <el-input v-model="item.key" placeHolder="属性"></el-input>
@@ -15,7 +15,7 @@
     </el-col>
   </el-row>
   <el-button type="primary" @click="addParameters">新增参数</el-button>
-</el-form-item>
+</div>
 </template>
 <script>
 export default {

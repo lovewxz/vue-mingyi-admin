@@ -4,7 +4,6 @@ import store from './vuex'
 import Login from './views/Login'
 import NotFound from './views/404'
 import Home from './views/Home'
-import Products from './views/shoplist/products'
 import Project from './views/project/project'
 import ProjectAddEdit from './views/project-add-edit/project-add-edit'
 
@@ -15,63 +14,71 @@ let routes = [
     path: '/',
     redirect: '/login',
     hidden: true
-  },
-  {
+  }, {
     path: '/login',
     component: Login,
     name: '',
     hidden: true
-  },
-  {
+  }, {
     path: '/404',
     component: NotFound,
     name: '',
     hidden: true
-  },
-  {
+  }, {
+    path: '/',
+    component: Home,
+    name: '分类目录',
+    iconCls: 'fa fa-th-list',
+    children: [
+      {
+        path: '/category',
+        component: Project,
+        name: '分类列表',
+        meta: {
+          requiresAuth: true
+        }
+      }
+    ]
+  }, {
     path: '/',
     component: Home,
     name: '项目产品',
-    iconCls: 'fa fa-id-card-o',
+    iconCls: 'fa fa-file-text-o',
     children: [
       {
         path: '/projects',
         component: Project,
         name: '项目列表 ',
-        meta: { requiresAuth: true }
+        meta: {
+          requiresAuth: true
+        }
       }, {
         path: '/projects/add',
         component: ProjectAddEdit,
         name: '添加项目',
-        meta: { requiresAuth: true }
+        meta: {
+          requiresAuth: true
+        }
       }, {
         path: '/projects/edit/:id',
         component: ProjectAddEdit,
+        name: '编辑项目',
         hidden: true,
-        meta: { requiresAuth: true }
+        meta: {
+          requiresAuth: true
+        }
       }
     ]
-  },
-  {
-    path: '/',
-    component: Home,
-    name: '',
-    iconCls: 'fa fa-id-card-o',
-    leaf: true,
-    children: [
-      { path: '/products', component: Products, name: '宝贝详情', meta: { requiresAuth: true } }
-       ]
-  },
-  {
+  }, {
     path: '*',
     hidden: true,
-    redirect: { path: '/404' }
+    redirect: {
+      path: '/404'
+    }
   }
 ]
 
-const router = new VueRouter({
-  routes
-})
+const router = new VueRouter({routes})
 
 router.beforeEach((to, from, next) => {
   const token = store.getters.user.token
@@ -81,7 +88,9 @@ router.beforeEach((to, from, next) => {
     } else {
       next({
         path: '/login',
-        query: { redirect: to.path }
+        query: {
+          redirect: to.path
+        }
       })
     }
   } else {

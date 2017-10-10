@@ -1,11 +1,14 @@
 <template>
-<div class="project-handler">
+<div class="project-handler" style="margin-top:30px;">
   <el-form :model="form" label-width="80px" :rules="formRules" ref="form">
     <el-form-item label="标题" prop="title">
       <el-input v-model="form.title" auto-complete="off" placeholder="请输入标题"></el-input>
     </el-form-item>
     <el-form-item label="简介" prop="description">
       <el-input type="textarea" v-model="form.description" placeholder="请输入简介"></el-input>
+    </el-form-item>
+    <el-form-item label="是否置顶" prop="isTop">
+      <el-checkbox v-model="form.isTop">置顶</el-checkbox>
     </el-form-item>
     <el-form-item label="封面图" prop="cover_image">
       <upload :upload-type="coverImg" :file-list="form.cover_image"></upload>
@@ -23,7 +26,15 @@
     <el-form-item label="图片列表" prop="detail_images">
       <upload :upload-type="detailImgs" :file-list="form.detail_images"></upload>
     </el-form-item>
-    <project-params :params="form.params"></project-params>
+    <el-form-item label="操作专家" prop="doctor">
+      <el-select placeholder="请选择专家" v-model="formSelectVal">
+        <el-option v-for="item in doctors" :key="item._id" :label="item.realname" :value="item._id">
+        </el-option>
+      </el-select>
+    </el-form-item>
+    <el-form-item label="参数" prop="params" class="project-params">
+      <project-params :params="form.params"></project-params>
+    </el-form-item>
   </el-form>
   <div slot="footer" class="dialog-footer">
     <el-button @click.native="cancelBtn">取消</el-button>
@@ -58,8 +69,12 @@ export default {
           key: '',
           value: ''
         }],
-        detail_images: []
-      }
+        detail_images: [],
+        doctor: '',
+        isTop: false
+      },
+      doctors: [],
+      formSelectVal: ''
     }
   },
   methods: {
@@ -67,30 +82,33 @@ export default {
     async save() {
       this.addLoading = true
       console.log(this._saveResult(this.form))
-      // const data = await api.putProject(this._saveResult(this.form))
-      // data.success ? this.$router.push('/projects') : this.$message({
-      //   message: data.err,
-      //   type: 'error'
-      // })
+      let data = ''
+      if (this.$route.params.id) {
+        data = await api.putProject(this._saveResult(this.form))
+      } else {
+        data = await api.saveProject(this._saveResult(this.form))
+      }
+      data.success ? this.$router.push('/projects') : this.$message({
+        message: data.err,
+        type: 'error'
+      })
     },
     // 取消按钮
     cancelBtn() {
       this.$router.push('/projects')
     },
     _saveResult(data) {
-
-      data.doctor = data.doctor._id
-      data.cover_image = data.cover_image[0].url.replace(`${config.imgCDN}/`,'')
-      data.detail_images = data.detail_images.map(item => item.url.replace(`${config.imgCDN}/`,''))
-      return data
+      const _data = Object.assign({}, data)
+      _data.doctor = this.formSelectVal
+      _data.cover_image = _data.cover_image.map(item => item.url.replace(`${config.imgCDN}/`, ''))
+      _data.detail_images = _data.detail_images.map(item => item.url.replace(`${config.imgCDN}/`, ''))
+      return _data
     },
     _genResult(data) {
-      if (data.cover_image) {
-        let coverImg = data.cover_image
-        data.cover_image = [{
-          name: coverImg.split('/').pop(),
-          url: `${config.imgCDN}/${coverImg}`
-        }]
+      if (data.cover_image.length > 0) {
+        const newImgs = []
+        data.cover_image.forEach(item => newImgs.push({ name: item.split('/').pop(), url: `${config.imgCDN}/${item}` }))
+        data.cover_image = newImgs
       }
       if (data.detail_images.length > 0) {
         const newImgs = []
@@ -100,13 +118,28 @@ export default {
       return Object.assign({}, data)
     }
   },
-  async created() {
-    if (!this.$route.params.id) {
-      this.$router.back()
-    }
-    await api.fetchProjectById(this.$route.params.id).then(res => {
-      this.form = this._genResult(res)
+  async beforeCreate() {
+    await api.fetchDoctor().then(res => {
+      res = res.data
+      this.doctors = res
     })
+  },
+  async created() {
+    if (this.$route.params.id) {
+      await api.fetchProjectById(this.$route.params.id).then(res => {
+        this.form = this._genResult(res)
+        if (this.form.doctor) {
+          this.formSelectVal = this.form.doctor._id
+        }
+      })
+    }
+  },
+  watch: {
+    '$route' (to, from) {
+      if (to.path.indexOf('add') > -1) {
+        this.$refs.form.resetFields()
+      }
+    }
   },
   components: {
     ProjectParams,
@@ -116,8 +149,8 @@ export default {
 </script>
 <style lang="scss">
 .project-handler {
-  .dialog-footer {
-    text-align: center;
-  }
+    .dialog-footer {
+        text-align: center;
+    }
 }
 </style>
