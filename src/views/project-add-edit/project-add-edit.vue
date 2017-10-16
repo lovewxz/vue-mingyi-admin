@@ -79,18 +79,22 @@ export default {
   },
   methods: {
     // 保存
-    async save() {
-      this.addLoading = true
-      console.log(this._saveResult(this.form))
-      let data = ''
-      if (this.$route.params.id) {
-        data = await api.putProject(this._saveResult(this.form))
-      } else {
-        data = await api.saveProject(this._saveResult(this.form))
-      }
-      data.success ? this.$router.push('/projects') : this.$message({
-        message: data.err,
-        type: 'error'
+    save() {
+      this.$refs.form.validate(async(valid) => {
+        if (valid) {
+          this.addLoading = true
+          console.log(this._saveResult(this.form))
+          let data = ''
+          if (this.$route.params.id) {
+            data = await api.putProject(this._saveResult(this.form))
+          } else {
+            data = await api.saveProject(this._saveResult(this.form))
+          }
+          data.success ? this.$router.push('/projects') : this.$message({
+            message: data.err,
+            type: 'error'
+          })
+        }
       })
     },
     // 取消按钮

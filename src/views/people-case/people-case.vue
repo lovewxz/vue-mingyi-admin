@@ -3,7 +3,7 @@
   <el-col :span="24" class="toolbar" style="padding-bottom: 0px;">
     <el-form :inline="true" :model="filters">
       <el-form-item>
-        <el-input v-model="filters.title" placeholder="标题"></el-input>
+        <el-input v-model="filters.name" placeholder="标题"></el-input>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="filter">查询</el-button>
@@ -61,7 +61,7 @@ export default {
       sels: [], //选中的数据
       // 筛选工具栏
       filters: {
-        title: ''
+        name: ''
       },
       // 分页
       page: 1,
@@ -106,10 +106,15 @@ export default {
       })
     },
     // 过滤查询
-    async filter() {
-      const keyword = encodeURIComponent(this.filters.title)
-      await this.fetchProject(this.page, this.pageSize, keyword)
-    },
+    filter() {
+      console.log(1)
+      let condition = {
+        name: new RegExp(this.filter.name)
+      }
+      console.log(condition)
+      const data = await this.fetchProject(this.page, this.pageSize, condition)
+      console.log(data)
+    }
     // 批量删除
     async batchDel() {
       if (Array.isArray(this.sels)) {
@@ -122,15 +127,12 @@ export default {
         await this.fetchProject(this.page, this.pageSize)
       }
     },
-    async fetchProject(page, limit, keyword = '') {
+    async fetchProject(page, limit, condition = {}) {
       this.listLoading = true
-      const list = keyword ? await api.fetchProject({
+      const list = await api.fetchProject({
         page,
         limit,
-        keyword
-      }) : await api.fetchProject({
-        page,
-        limit
+        condition
       })
       this.listLoading = false
       this.project = list.data
