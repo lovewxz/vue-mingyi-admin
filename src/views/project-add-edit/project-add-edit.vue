@@ -122,13 +122,19 @@ export default {
       return Object.assign({}, data)
     }
   },
-  async beforeCreate() {
+  async created() {
     await api.fetchDoctor().then(res => {
       res = res.data
       this.doctors = res
+    }).catch(e => {
+      if (e.status === 401) {
+        this.$message({
+          message: e.data,
+          type: 'error'
+        })
+        return
+      }
     })
-  },
-  async created() {
     if (this.$route.params.id) {
       await api.fetchProjectById(this.$route.params.id).then(res => {
         this.form = this._genResult(res)

@@ -14,7 +14,7 @@
 </template>
 
 <script>
-import { mapActions,mapGetters } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
 import { USER_KEY } from '../common/js/cache'
 import storage from 'good-storage'
 
@@ -53,8 +53,10 @@ export default {
           console.log(this.loginInfo)
           if (info.success) {
             storage.set(USER_KEY, this.user)
+            //如果用户手动输入"/"那么会跳转到这里来，即this.$route.query.redirect有参数
+            let redirectUrl = decodeURIComponent(this.$route.query.redirect || '/projects')
             this.$router.replace({
-              path: '/projects'
+              path: redirectUrl
             })
           } else {
             this.$message({

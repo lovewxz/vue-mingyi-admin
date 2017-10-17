@@ -29,12 +29,14 @@ instance.interceptors.response.use(response => {
     switch (error.response.status) {
       case 401:
         store.dispatch('userLogout'); //可能是token过期，清除它
+        console.log(router.currentRoute)
         router.replace({ //跳转到登录页面
           path: '/login',
           query: {
             redirect: router.currentRoute.fullPath
           } // 将跳转的路由path作为参数，登录成功后跳转到该路由
         })
+        break
     }
   }
   return Promise.reject(error.response)
@@ -42,10 +44,13 @@ instance.interceptors.response.use(response => {
 
 export default {
   userLogin(data) {
-    return instance.post(`/admin/login`, data)
+    return instance.post('/admin/login', data)
+  },
+  fetchQiniuToken(params) {
+    return instance.get('/qiniu/uptoken', {params})
   },
   fetchProject(params) {
-    return instance.get(`/admin/projects`, {params}).then(res => {
+    return instance.get('/admin/projects', {params}).then(res => {
       res = res.data
       if (res.success) {
         return {data: res.data.list, total: res.data.total}
@@ -63,25 +68,25 @@ export default {
     })
   },
   putProject(params) {
-    return instance.put(`/admin/projects`, params).then(res => {
+    return instance.put('/admin/projects', params).then(res => {
       res = res.data
       return res
     })
   },
   delProject(params) {
-    return instance.put(`/admin/project/del`, params).then(res => {
+    return instance.put('/admin/project/del', params).then(res => {
       res = res.data
       return res
     })
   },
   saveProject(params) {
-    return instance.post(`/admin/projects`, params).then(res => {
+    return instance.post('/admin/projects', params).then(res => {
       res = res.data
       return res
     })
   },
   fetchDoctor(params) {
-    return instance.get(`/admin/doctors`, {params}).then(res => {
+    return instance.get('/admin/doctors', {params}).then(res => {
       res = res.data
       if (res.success) {
         return {data: res.data.list, total: res.data.total}
