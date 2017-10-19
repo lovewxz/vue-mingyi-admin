@@ -66,12 +66,17 @@
 				</div>
 			</section>
 		</el-col>
+		<el-dialog :visible="loginShow" :close-on-click-modal="false" :close-on-press-escape="false" :show-close="false">
+			<login @loginSuccess="loginSuccess"></login>
+		</el-dialog>
 	</el-row>
 </template>
 
 <script>
 import { USER_KEY } from 'js/cache'
-import { mapActions } from 'vuex'
+import { mapActions,mapGetters } from 'vuex'
+import Login from 'components/login/login'
+
 export default {
 	data() {
 		return {
@@ -81,7 +86,15 @@ export default {
 			sysUserAvatar: ''
 		}
 	},
+	computed: {
+		...mapGetters([
+			'loginShow'
+		])
+	},
 	methods: {
+		loginSuccess() {
+			this.tokenExpired(false)
+		},
 		onSubmit() {
 			console.log('submit!');
 		},
@@ -111,7 +124,8 @@ export default {
 			this.$refs.menuCollapsed.getElementsByClassName('submenu-hook-'+i)[0].style.display=status?'block':'none';
 		},
 		...mapActions([
-			'userLogout'
+			'userLogout',
+			'tokenExpired'
 		])
 	},
 	mounted() {
@@ -121,6 +135,9 @@ export default {
 			this.sysUserName = user.name || '';
 			this.sysUserAvatar = user.avatar || '';
 		}
+	},
+	components: {
+	  Login
 	}
 }
 

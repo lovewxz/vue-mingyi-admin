@@ -28,7 +28,7 @@ instance.interceptors.response.use(response => {
   if (error.response) {
     switch (error.response.status) {
       case 401:
-        store.dispatch('userLogout'); //可能是token过期，清除它
+        store.dispatch('userLogout') //可能是token过期，清除它
         console.log(router.currentRoute)
         router.replace({ //跳转到登录页面
           path: '/login',
@@ -37,6 +37,8 @@ instance.interceptors.response.use(response => {
           } // 将跳转的路由path作为参数，登录成功后跳转到该路由
         })
         break
+     case 402:
+       store.dispatch('tokenExpired', true)
     }
   }
   return Promise.reject(error.response)

@@ -6,6 +6,9 @@ const mutations = {
   },
   [types.LOGIN](state,loginInfo) {
     state.loginInfo = loginInfo
+  },
+  [types.SET_LOGINSHOW](state,loginShow) {
+    state.loginShow = loginShow
   }
 }
 

@@ -154,5 +154,8 @@ export default {
         text-decoration: line-through;
         color: #666;
     }
+    .el-loading-mask {
+      z-index: 500;
+    }
 }
 </style>

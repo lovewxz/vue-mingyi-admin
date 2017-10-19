@@ -16,3 +16,12 @@ export const userLogout = function ({ commit }) {
   storage.remove(USER_KEY)
   commit(types.SET_USER, {})
 }
+
+export const tokenExpired = function ({ dispatch,commit }, params) {
+  if (params) {
+    dispatch('userLogout')
+    commit(types.SET_LOGINSHOW, params)
+  } else {
+    commit(types.SET_LOGINSHOW, params)
+  }
+}

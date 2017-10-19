@@ -74,7 +74,8 @@ export default {
         isTop: false
       },
       doctors: [],
-      formSelectVal: ''
+      formSelectVal: '',
+      isAuthorized: false // 是否验证过
     }
   },
   methods: {
@@ -127,15 +128,15 @@ export default {
       res = res.data
       this.doctors = res
     }).catch(e => {
-      if (e.status === 401) {
+      if (e.status === 402) {
+        this.isAuthorized = true
         this.$message({
           message: e.data,
           type: 'error'
         })
-        return
       }
     })
-    if (this.$route.params.id) {
+    if (this.$route.params.id && !this.isAuthorized) {
       await api.fetchProjectById(this.$route.params.id).then(res => {
         this.form = this._genResult(res)
         if (this.form.doctor) {
