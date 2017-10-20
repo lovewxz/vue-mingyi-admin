@@ -87,6 +87,42 @@ export default {
       return res
     })
   },
+  fetchPcase(params) {
+    return instance.get('/admin/pcases', {params}).then(res => {
+      res = res.data
+      if (res.success) {
+        return {data: res.data.list, total: res.data.total}
+      } else {
+        return {err: res.err}
+      }
+    })
+  },
+  fetchPcaseById(params) {
+    return instance.get(`/admin/pcases/${params}`).then(res => {
+      res = res.data
+      return res.success
+        ? res.data
+        : res.err
+    })
+  },
+  putPcase(params) {
+    return instance.put('/admin/pcases', params).then(res => {
+      res = res.data
+      return res
+    })
+  },
+  delPcase(params) {
+    return instance.put('/admin/pcase/del', params).then(res => {
+      res = res.data
+      return res
+    })
+  },
+  savePcase(params) {
+    return instance.post('/admin/pcases', params).then(res => {
+      res = res.data
+      return res
+    })
+  },
   fetchDoctor(params) {
     return instance.get('/admin/doctors', {params}).then(res => {
       res = res.data

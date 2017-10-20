@@ -1,22 +1,10 @@
 <template>
-<div class="project">
-  <el-col :span="24" class="toolbar" style="padding-bottom: 0px;">
-    <el-form :inline="true" :model="filters">
-      <el-form-item>
-        <el-input v-model="filters.name" placeholder="标题"></el-input>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="filter">查询</el-button>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="handleAdd">新增</el-button>
-      </el-form-item>
-    </el-form>
-  </el-col>
-
-  <el-table :data="project" border @selection-change="selsChange" v-loading="listLoading">
+<div class="pcase">
+  <filter-bar @filter="filter" @add="handleAdd" style="padding-bottom:0;"></filter-bar>
+  <el-table :data="pcase" border @selection-change="selsChange" v-loading="listLoading">
     <el-table-column type="selection"></el-table-column>
-    <el-table-column prop="title" label="标题" align="left"></el-table-column>
+    <el-table-column prop="title" label="日记标题" align="left"></el-table-column>
+    <el-table-column prop="user_name" label="模特姓名" align="left"></el-table-column>
     <el-table-column prop="time" label="发布时间" align="center" width="200">
       <template scope="scope">
         {{scope.row.meta.createdAt.split('T')[0]}}
@@ -49,6 +37,7 @@ import config from 'js/config'
 import util from 'js/util'
 import api from 'js/axios'
 import ProjectParams from 'components/project-params/project-params'
+import FilterBar from 'components/filter-bar/filter-bar'
 import axios from 'axios'
 import randomToken from 'random-token'
 
@@ -57,12 +46,8 @@ export default {
   data() {
     return {
       total: 0,
-      project: [],
+      pcase: [],
       sels: [], //选中的数据
-      // 筛选工具栏
-      filters: {
-        name: ''
-      },
       // 分页
       page: 1,
       pageSize: 20,
@@ -70,12 +55,12 @@ export default {
     }
   },
   async created() {
-    await this.fetchProject(this.page, this.pageSize)
+    await this.fetchPcase(this.page, this.pageSize)
   },
   methods: {
     //分页
     async handleCurrentChange(page) {
-      await this.fetchProject(page, this.pageSize)
+      await this.fetchPcase(page, this.pageSize)
     },
     // 选择按钮
     selsChange(sels) {
@@ -83,22 +68,21 @@ export default {
     },
     // 增加按钮
     handleAdd() {
-      this.$router.push('/projects/add')
+      this.$router.push('/pcases/add')
     },
     // 编辑按钮
     handleEdit(index, row) {
-      this.$router.push(`/projects/edit/${row._id}`)
+      this.$router.push(`/pcases/edit/${row._id}`)
     },
     // 删除按钮
     handleDel(index, row) {
-      var _this = this;
       this.$confirm('确认删除吗?', '提示', {
         type: 'warning'
       }).then(async() => {
         const options = Object.assign({}, { _id: row._id }, { status: -1 })
-        const data = await api.delProject(options)
+        const data = await api.delPcase(options)
         if (data.success && data.data.ok === 1) {
-          await this.fetchProject(this.page, this.pageSize)
+          await this.fetchPcase(this.page, this.pageSize)
         }
         console.log(data)
       }, () => {
@@ -106,15 +90,10 @@ export default {
       })
     },
     // 过滤查询
-    filter() {
-      console.log(1)
-      let condition = {
-        name: new RegExp(this.filter.name)
-      }
-      console.log(condition)
-      const data = await this.fetchProject(this.page, this.pageSize, condition)
-      console.log(data)
-    }
+    async filter(keyword) {
+      keyword = encodeURIComponent(keyword)
+      await this.fetchPcase(this.page, this.pageSize, keyword)
+    },
     // 批量删除
     async batchDel() {
       if (Array.isArray(this.sels)) {
@@ -122,25 +101,30 @@ export default {
         this.sels.forEach((item) => {
           options.push(Object.assign({}, { _id: item._id }, { status: -1 }))
         })
-        let promises = options.map((option) => api.delProject(option))
+        let promises = options.map((option) => api.delPcase(option))
         let results = await Promise.all(promises)
-        await this.fetchProject(this.page, this.pageSize)
+        await this.fetchPcase(this.page, this.pageSize)
       }
     },
-    async fetchProject(page, limit, condition = {}) {
+    async fetchPcase(page, limit, keyword = '') {
       this.listLoading = true
-      const list = await api.fetchProject({
+      const list = keyword ? await api.fetchPcase({
         page,
         limit,
-        condition
+        keyword
+      }) : await api.fetchPcase({
+        page,
+        limit
       })
       this.listLoading = false
-      this.project = list.data
+      this.pcase = list.data
       this.total = list.total
+      console.log(this.pcase)
     }
   },
   components: {
-    ProjectParams
+    ProjectParams,
+    FilterBar
   }
 }
 </script>
@@ -155,6 +139,9 @@ export default {
         display: block;
         text-decoration: line-through;
         color: #666;
+    }
+    .el-loading-mask {
+      z-index: 500;
     }
 }
 </style>

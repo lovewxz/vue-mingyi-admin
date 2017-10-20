@@ -16,7 +16,9 @@ export default {
     },
     fileList: {
       type: Array,
-      default: []
+      default: () => {
+        return []
+      }
     }
   },
   data() {

@@ -112,30 +112,34 @@ export default {
     _genResult(data) {
       if (data.cover_image.length > 0) {
         const newImgs = []
-        data.cover_image.forEach(item => newImgs.push({ name: item.split('/').pop(), url: `${config.imgCDN}/${item}` }))
+        data.cover_image.forEach(item => newImgs.push({ name: item, url: `${config.imgCDN}/${item}` }))
         data.cover_image = newImgs
       }
       if (data.detail_images.length > 0) {
         const newImgs = []
-        data.detail_images.forEach(item => newImgs.push({ name: item.split('/').pop(), url: `${config.imgCDN}/${item}` }))
+        data.detail_images.forEach(item => newImgs.push({ name: item, url: `${config.imgCDN}/${item}` }))
         data.detail_images = newImgs
       }
       return Object.assign({}, data)
     }
   },
+  async beforeCreate() {
+    if (!this.isAuthorized) {
+      await api.fetchDoctor().then(res => {
+        res = res.data
+        this.doctors = res
+      }).catch(e => {
+        if (e.status === 402) {
+          this.isAuthorized = true
+          this.$message({
+            message: e.data,
+            type: 'error'
+          })
+        }
+      })
+    }
+  },
   async created() {
-    await api.fetchDoctor().then(res => {
-      res = res.data
-      this.doctors = res
-    }).catch(e => {
-      if (e.status === 402) {
-        this.isAuthorized = true
-        this.$message({
-          message: e.data,
-          type: 'error'
-        })
-      }
-    })
     if (this.$route.params.id && !this.isAuthorized) {
       await api.fetchProjectById(this.$route.params.id).then(res => {
         this.form = this._genResult(res)

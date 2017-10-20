@@ -1,19 +1,6 @@
 <template>
 <div class="project">
-  <el-col :span="24" class="toolbar" style="padding-bottom: 0px;">
-    <el-form :inline="true" :model="filters">
-      <el-form-item>
-        <el-input v-model="filters.title" placeholder="标题"></el-input>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="filter">查询</el-button>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="handleAdd">新增</el-button>
-      </el-form-item>
-    </el-form>
-  </el-col>
-
+  <filter-bar @filter="filter" @add="handleAdd" style="padding-bottom:0;"></filter-bar>
   <el-table :data="project" border @selection-change="selsChange" v-loading="listLoading">
     <el-table-column type="selection"></el-table-column>
     <el-table-column prop="title" label="标题" align="left"></el-table-column>
@@ -49,6 +36,7 @@ import config from 'js/config'
 import util from 'js/util'
 import api from 'js/axios'
 import ProjectParams from 'components/project-params/project-params'
+import FilterBar from 'components/filter-bar/filter-bar'
 import axios from 'axios'
 import randomToken from 'random-token'
 
@@ -59,10 +47,6 @@ export default {
       total: 0,
       project: [],
       sels: [], //选中的数据
-      // 筛选工具栏
-      filters: {
-        title: ''
-      },
       // 分页
       page: 1,
       pageSize: 20,
@@ -91,7 +75,6 @@ export default {
     },
     // 删除按钮
     handleDel(index, row) {
-      var _this = this;
       this.$confirm('确认删除吗?', '提示', {
         type: 'warning'
       }).then(async() => {
@@ -106,8 +89,8 @@ export default {
       })
     },
     // 过滤查询
-    async filter() {
-      const keyword = encodeURIComponent(this.filters.title)
+    async filter(keyword) {
+      keyword = encodeURIComponent(keyword)
       await this.fetchProject(this.page, this.pageSize, keyword)
     },
     // 批量删除
@@ -138,7 +121,8 @@ export default {
     }
   },
   components: {
-    ProjectParams
+    ProjectParams,
+    FilterBar
   }
 }
 </script>

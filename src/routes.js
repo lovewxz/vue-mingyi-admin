@@ -5,7 +5,9 @@ import Login from './views/Login'
 import NotFound from './views/404'
 import Home from './views/Home'
 import Project from './views/project/project'
-import ProjectAddEdit from './views/project-add-edit/project-add-edit'
+import ProjectOperation from './views/project-operation/project-operation'
+import PeopleCase from './views/people-case/people-case.vue'
+import PeopleCaseOperation from './views/people-case-operation/people-case-operation.vue'
 
 Vue.use(VueRouter)
 
@@ -54,15 +56,38 @@ let routes = [
         }
       }, {
         path: '/projects/add',
-        component: ProjectAddEdit,
+        component: ProjectOperation,
         name: '添加项目',
         meta: {
           requiresAuth: true
         }
       }, {
         path: '/projects/edit/:id',
-        component: ProjectAddEdit,
+        component: ProjectOperation,
         name: '编辑项目',
+        hidden: true,
+        meta: {
+          requiresAuth: true
+        }
+      }
+    ]
+  }, {
+    path: '/',
+    component: Home,
+    name: '案例日记',
+    iconCls: 'fa fa-female',
+    children: [
+      {
+        path: '/pcases',
+        component: PeopleCase,
+        name: '日记列表',
+        meta: {
+          requiresAuth: true
+        }
+      }, {
+        path: '/pcases/edit/:id',
+        component: PeopleCaseOperation,
+        name: '编辑日记',
         hidden: true,
         meta: {
           requiresAuth: true
