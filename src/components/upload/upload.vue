@@ -1,5 +1,13 @@
 <template>
-  <el-upload list-type="picture-card" :on-success="handleSuccess" :on-remove="handleRemove" :before-upload="beforeUpload" action="//up-z2.qiniu.com/" :data="imgData" :file-list="fileList" class="upload">
+  <el-upload list-type="picture-card"
+    :on-success="handleSuccess"
+    :on-remove="handleRemove"
+    :before-upload="beforeUpload"
+    action="//up-z2.qiniu.com/"
+    :data="imgData"
+    :file-list="fileList"
+    :on-preview="handlePreview"
+    class="upload">
     <i class="el-icon-plus"></i>
   </el-upload>
 </template>
@@ -29,6 +37,9 @@ export default {
     }
   },
   methods: {
+    handlePreview(file,filelist) {
+      this.$emit('insert',file) // 预览暂时用作富文本编辑的插入
+    },
     handleSuccess(response, file) {
       let key = response.key
       let name = file.name
@@ -55,7 +66,7 @@ export default {
           token: response.upToken
         }
       }).catch(e => {
-        if (e.status === 401) {
+        if (e.status === 402) {
           this.$message({
             message: e.data,
             type: 'error'

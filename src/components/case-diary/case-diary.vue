@@ -7,7 +7,7 @@
     <el-table-column prop="text" label="文章">
       <template scope="scope">
           {{_subText(scope.row.text)}}
-        </template>
+      </template>
     </el-table-column>
     <el-table-column label="操作" align="center" width="200">
       <template scope="scope">
@@ -26,38 +26,47 @@
   <el-col :span="24" class="toolbar">
     <el-button type="danger" :disabled="this.sels.length===0" @click="batchDel">批量删除</el-button>
   </el-col>
-  <el-dialog :visible="diaryShow">
+  <el-dialog :visible.sync="diaryShow" class="case-dialog" title="日记详情" :close-on-click-modal="false">
     <el-form :model="diaryData">
       <el-form-item label="日期" prop="title">
-        <el-input v-model="diaryData.title"></el-input>
+        <el-col :span="10">
+          <el-input v-model="diaryData.title"></el-input>
+        </el-col>
       </el-form-item>
-      <quill-editor v-model="diaryData.article" :options="editorOption" class="quill-editor">
-        <div id="toolbar" slot="toolbar">
-            <!-- Add a bold button -->
-            <button class="ql-bold">Bold</button>
-            <button class="ql-italic">Italic</button>
-            <!-- Add font size dropdown -->
-            <select class="ql-size">
-              <option value="small"></option>
-              <!-- Note a missing, thus falsy value, is used to reset to default -->
-              <option selected></option>
-              <option value="large"></option>
-              <option value="huge"></option>
-            </select>
-            <!-- Add subscript and superscript buttons -->
-            <button class="ql-script" value="sub"></button>
-            <button class="ql-script" value="super"></button>
-            <button @click="customButtonClick" class="ql-image">custom button</button>
-        </div>
-      </quill-editor>
+      <el-form-item class="editor-content-item" label="文章详情">
+        <el-col :span="24">
+          <quill-editor v-model="addURLToImage" class="vue-editor" ref="editor" :options="editorOption" @blur="onEditorBlur($event)" @focus="onEditorFocus($event)" @ready="onEditorReady($event)">
+            <div id="toolbar" slot="toolbar">
+              <button class="ql-bold">Bold</button>
+              <button class="ql-italic">Italic</button>
+              <select class="ql-size">
+                <option value="small"></option>
+                <option selected></option>
+                <option value="large"></option>
+                <option value="huge"></option>
+              </select>
+              <!-- Add subscript and superscript buttons -->
+              <button class="ql-script" value="sub"></button>
+              <button class="ql-script" value="super"></button>
+              <el-button @click="uploadHandler" class="el-icon-picture"></el-button>
+            </div>
+          </quill-editor>
+        </el-col>
+      </el-form-item>
+      <el-form-item class="upload-wrapper" v-if="uploadShow">
+        <upload :file-list="fileList" @insert="insertEditor"></upload>
+      </el-form-item>
     </el-form>
   </el-dialog>
 </div>
 </template>
 <script>
-import { quillEditor } from 'vue-quill-editor'
 import util from 'js/util'
+import config from 'js/config'
+import Upload from 'components/upload/upload'
 import FilterBar from 'components/filter-bar/filter-bar'
+import Quill from 'quill'
+import { quillEditor } from 'vue-quill-editor'
 
 export default {
   props: {
@@ -80,6 +89,18 @@ export default {
         modules: {
           toolbar: '#toolbar'
         }
+      },
+      uploadShow: false,
+      fileList: [],
+      editorSelection: null
+    }
+  },
+  computed: {
+    addURLToImage() {
+      if (this.diaryData && this.diaryData.article) {
+        let res = this.diaryData.article
+        res = res.replace(/src=(\"|\')/g, `src="${config.imgCDN}/`)
+        return res
       }
     }
   },
@@ -99,12 +120,35 @@ export default {
     handleEdit(index, value) {
       this.diaryShow = true
       this.diaryData = value
+      this.uploadShow = false
     },
     batchDel() {
 
     },
+    onEditorBlur(editor) {
+      console.log('editor blur!', editor)
+    },
+    onEditorFocus(editor) {
+      this.editorSelection = editor.getSelection().index
+      console.log(this.editorSelection)
+    },
+    onEditorReady(editor) {
+      console.log('editor ready!', editor)
+    },
+    insertEditor(file) {
+      const index = this.fileList.findIndex(item => item.uid === file.uid)
+      const quillHook = this.$refs.editor.quill
+      if (this.editorSelection) {
+        console.log(1)
+        quillHook.insertEmbed(this.editorSelection, 'image', file.url)
+        this.fileList.splice(index, 1)
+      }
+    },
+    uploadHandler() {
+      this.uploadShow = !this.uploadShow
+    },
     _subText(str) {
-      str = `${util.removeHTMLTag(str).substring(0,30)}...`
+      str = `${util.removeHTMLTag(str).substring(0,50)}...`
       return str
     }
   },
@@ -118,14 +162,32 @@ export default {
   },
   components: {
     FilterBar,
-    quillEditor
+    quillEditor,
+    Upload
   }
 }
 </script>
 <style lang="scss">
 .case-diary {
-  .quill-editor {
-    line-height: 1!important;
-  }
+    .case-dialog {
+        .editor-content-item {
+            height: 520px;
+            .vue-editor {
+                line-height: 1!important;
+                height: 450px;
+                img {
+                    max-width: 300px!important;
+                }
+            }
+        }
+        .el-form-item {
+            margin-bottom: 22px !important;
+        }
+        .upload-wrapper {
+            padding: 8px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+    }
 }
 </style>
