@@ -35,7 +35,7 @@
       <el-tag :key="tag" v-for="tag in form.all_item" :closable="true" :close-transition="false" type="primary" class="tag-item">{{tag}}</el-tag>
     </el-form-item>
     <el-form-item label="相关日记">
-      <case-diary :table-data="form.sections" @form-change="formChange"></case-diary>
+      <case-diary :table-data="form.sections" @save="diarySave" @add="diaryAdd" ref="caseDiary"></case-diary>
     </el-form-item>
   </el-form>
   <div slot="footer" class="dialog-footer">
@@ -45,9 +45,9 @@
 </div>
 </template>
 <script>
+import util from 'js/util'
 import api from 'js/axios'
 import config from 'js/config'
-import ProjectParams from 'components/project-params/project-params'
 import Upload from 'components/upload/upload'
 import CaseDiary from 'components/case-diary/case-diary'
 
@@ -106,8 +106,15 @@ export default {
     cancelBtn() {
       this.$router.back()
     },
-    formChange(newVal) {
-      this.form.sections = newVal
+    async diarySave(diaryData) {
+      this.form.sections = diaryData
+      let params = this._formateResult(this.form)
+      // await api.putPcase(this.form).then(res => {
+      //   console.log(res)
+      // })
+    },
+    diaryAdd(diaryData) {
+      this.form.sections.push(diaryData)
     },
     _saveResult(data) {
       const _data = Object.assign({}, data)
@@ -121,7 +128,20 @@ export default {
         data.compare_photo.before = [{ name: data.compare_photo.before, url: `${config.imgCDN}/${data.compare_photo.before}` }]
         data.compare_photo.after = [{ name: data.compare_photo.after, url: `${config.imgCDN}/${data.compare_photo.after}` }]
       }
+      if (data.sections) {
+        data.sections = data.sections.map(item => {
+          if (item.article) {
+            item.article = util.addURLToImage(item.article)
+          }
+          return item
+        })
+      }
       return Object.assign({}, data)
+    },
+    _formateResult(data) {
+      let params = Object.assign({},data)
+      params.doctor = params.doctor._id
+      params.project = params.project._id
     }
   },
   async beforeCreate() {
@@ -139,7 +159,7 @@ export default {
         }
       })
     }
-    if(!this.isAuthorized) {
+    if (!this.isAuthorized) {
       const params = {
         page: 0,
         limit: 0
@@ -180,7 +200,6 @@ export default {
     }
   },
   components: {
-    ProjectParams,
     Upload,
     CaseDiary
   }
@@ -192,13 +211,13 @@ export default {
         text-align: center;
     }
     .el-upload-list__item {
-      text-align: center;
-      .el-upload-list__item-thumbnail {
-        width: auto;
-      }
+        text-align: center;
+        .el-upload-list__item-thumbnail {
+            width: auto;
+        }
     }
     .tag-item {
-      margin-right: 10px;
+        margin-right: 10px;
     }
 }
 </style>

@@ -80,14 +80,14 @@ let routes = [
       {
         path: '/pcases',
         component: PeopleCase,
-        name: '日记列表',
+        name: '案例列表',
         meta: {
           requiresAuth: true
         }
       }, {
         path: '/pcases/edit/:id',
         component: PeopleCaseOperation,
-        name: '编辑日记',
+        name: '编辑案例',
         hidden: true,
         meta: {
           requiresAuth: true

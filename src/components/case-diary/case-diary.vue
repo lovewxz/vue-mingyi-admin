@@ -4,9 +4,9 @@
   <el-table :data="tableData" border @selection-change="selsChange">
     <el-table-column type="selection" width="55"></el-table-column>
     <el-table-column prop="title" label="日期" width="120"></el-table-column>
-    <el-table-column prop="text" label="文章">
+    <el-table-column prop="article" label="文章">
       <template scope="scope">
-          {{_subText(scope.row.text)}}
+          {{_subText(scope.row.article)}}
       </template>
     </el-table-column>
     <el-table-column label="操作" align="center" width="200">
@@ -26,16 +26,16 @@
   <el-col :span="24" class="toolbar">
     <el-button type="danger" :disabled="this.sels.length===0" @click="batchDel">批量删除</el-button>
   </el-col>
-  <el-dialog :visible.sync="diaryShow" class="case-dialog" title="日记详情" :close-on-click-modal="false">
-    <el-form :model="diaryData">
+  <el-dialog :visible.sync="diaryShow" class="case-dialog" title="日记详情">
+    <el-form :model="diaryData" ref="diary" :rules="formRules">
       <el-form-item label="日期" prop="title">
         <el-col :span="10">
           <el-input v-model="diaryData.title"></el-input>
         </el-col>
       </el-form-item>
-      <el-form-item class="editor-content-item" label="文章详情">
+      <el-form-item class="editor-content-item" label="文章详情" prop="article">
         <el-col :span="24">
-          <quill-editor v-model="addURLToImage" class="vue-editor" ref="editor" :options="editorOption" @blur="onEditorBlur($event)" @focus="onEditorFocus($event)" @ready="onEditorReady($event)">
+          <quill-editor :content="diaryData.article" class="vue-editor" ref="editor" :options="editorOption" @change="onEditorChange($event)" @focus="onEditorFocus($event)">
             <div id="toolbar" slot="toolbar">
               <button class="ql-bold">Bold</button>
               <button class="ql-italic">Italic</button>
@@ -57,6 +57,10 @@
         <upload :file-list="fileList" @insert="insertEditor"></upload>
       </el-form-item>
     </el-form>
+    <div slot="footer" class="dialog-footer">
+      <el-button @click.native="diaryHide">取消</el-button>
+      <el-button type="primary" @click.native="diarySave">提交</el-button>
+    </div>
   </el-dialog>
 </div>
 </template>
@@ -67,6 +71,7 @@ import Upload from 'components/upload/upload'
 import FilterBar from 'components/filter-bar/filter-bar'
 import Quill from 'quill'
 import { quillEditor } from 'vue-quill-editor'
+import randomToken from 'random-token'
 
 export default {
   props: {
@@ -79,29 +84,27 @@ export default {
   },
   data() {
     return {
+      formRules: {
+        title: [
+          { required: true, message: '请输入天数', trigger: 'blur' }
+        ]
+      },
       formData: [],
       sels: [],
       total: 0,
       pageSize: 5,
       diaryData: {},
+      diaryDataIndex: 0,
       diaryShow: false,
       editorOption: {
         modules: {
           toolbar: '#toolbar'
         }
       },
+      editorContent: '',
       uploadShow: false,
       fileList: [],
       editorSelection: null
-    }
-  },
-  computed: {
-    addURLToImage() {
-      if (this.diaryData && this.diaryData.article) {
-        let res = this.diaryData.article
-        res = res.replace(/src=(\"|\')/g, `src="${config.imgCDN}/`)
-        return res
-      }
     }
   },
   methods: {
@@ -114,50 +117,78 @@ export default {
         return item.text.match(keyword)
       })
     },
-    handleAdd(index, value) {
-
+    handleAdd() {
+      this.diaryShow = true
+      this.diaryData = {}
     },
     handleEdit(index, value) {
       this.diaryShow = true
-      this.diaryData = value
+      this.diaryData = Object.assign({}, value)
+      this.diaryDataIndex = index
       this.uploadShow = false
     },
     batchDel() {
 
     },
-    onEditorBlur(editor) {
-      console.log('editor blur!', editor)
+    onEditorFocus() {
+      this.editorSelection = this.$refs.editor.quill.getSelection().index
     },
-    onEditorFocus(editor) {
-      this.editorSelection = editor.getSelection().index
-      console.log(this.editorSelection)
-    },
-    onEditorReady(editor) {
-      console.log('editor ready!', editor)
+    onEditorChange({ editor, html, text }) {
+      this.diaryData.article = html
     },
     insertEditor(file) {
       const index = this.fileList.findIndex(item => item.uid === file.uid)
       const quillHook = this.$refs.editor.quill
       if (this.editorSelection) {
-        console.log(1)
         quillHook.insertEmbed(this.editorSelection, 'image', file.url)
         this.fileList.splice(index, 1)
+      } else {
+        this.$message({
+          message: '请选择插入的位置',
+          type: 'error'
+        })
       }
     },
     uploadHandler() {
       this.uploadShow = !this.uploadShow
     },
+    diaryHide() {
+      this.diaryShow = false
+    },
+    diarySave() {
+      this.$refs.diary.validate((valid) => {
+        if (valid) {
+          if (this.diaryData.id) {
+            this.formData = this.formData.map((item, index) => {
+              if (index === this.diaryDataIndex) {
+                item = this.diaryData
+              }
+              return item
+            })
+            this.$emit('save', this.formData)
+          } else {
+            this.diaryData.id = randomToken(32)
+            this.$emit('add', this.diaryData)
+          }
+          this.diaryShow = false
+        }
+      })
+    },
+    resetFields() {
+      this.$refs.diary.resetFields()
+    },
     _subText(str) {
+      if (!str) {
+        return
+      }
       str = `${util.removeHTMLTag(str).substring(0,50)}...`
       return str
     }
   },
   watch: {
     tableData(newVal) {
+      console.log(`${newVal}---1`)
       this.formData = newVal
-    },
-    formData(newVal) {
-      this.$emit('form-change', newVal)
     }
   },
   components: {
