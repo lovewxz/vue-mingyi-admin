@@ -109,9 +109,9 @@ export default {
     async diarySave(diaryData) {
       this.form.sections = diaryData
       let params = this._formateResult(this.form)
-      // await api.putPcase(this.form).then(res => {
-      //   console.log(res)
-      // })
+      await api.putPcase(params).then(res => {
+        console.log(res)
+      })
     },
     diaryAdd(diaryData) {
       this.form.sections.push(diaryData)
@@ -139,9 +139,12 @@ export default {
       return Object.assign({}, data)
     },
     _formateResult(data) {
-      let params = Object.assign({},data)
+      let params = JSON.parse(JSON.stringify(data))
       params.doctor = params.doctor._id
       params.project = params.project._id
+      params.compare_photo.before = util.removeURLToImage(params.compare_photo.before[0].url)
+      params.compare_photo.after = util.removeURLToImage(params.compare_photo.after[0].url)
+      return params
     }
   },
   async beforeCreate() {
