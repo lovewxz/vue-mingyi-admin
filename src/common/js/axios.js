@@ -123,6 +123,32 @@ export default {
       return res
     })
   },
+  fetchDiaryById(params) {
+    return instance.get(`/admin/diaries/${params}`).then(res => {
+      res = res.data
+      return res.success
+        ? res.data
+        : res.err
+    })
+  },
+  putDiary(params) {
+    return instance.put('/admin/diaries', params).then(res => {
+      res = res.data
+      return res
+    })
+  },
+  delDiary(params) {
+    return instance.put('/admin/diary/del', params).then(res => {
+      res = res.data
+      return res
+    })
+  },
+  saveDiary(params) {
+    return instance.post('/admin/diaries', params).then(res => {
+      res = res.data
+      return res
+    })
+  },
   fetchDoctor(params) {
     return instance.get('/admin/doctors', {params}).then(res => {
       res = res.data

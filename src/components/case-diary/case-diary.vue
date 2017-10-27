@@ -112,10 +112,14 @@ export default {
       this.sels = sels
     },
     filter(keyword) {
+      if (!keyword) {
+        return this.formData
+      }
       keyword = new RegExp(keyword, 'i')
       this.formData = this.formData.filter(item => {
-        return item.text.match(keyword)
+        return item.article.match(keyword)
       })
+      this.$emit('filter', this.formData)
     },
     handleAdd() {
       this.diaryShow = true
@@ -127,8 +131,11 @@ export default {
       this.diaryDataIndex = index
       this.uploadShow = false
     },
+    handleDel(index, value) {
+      this.$emit('del', index)
+    },
     batchDel() {
-
+      this.$emit('batchDel', this.sels)
     },
     onEditorFocus() {
       this.editorSelection = this.$refs.editor.quill.getSelection().index
@@ -158,17 +165,10 @@ export default {
     diarySave() {
       this.$refs.diary.validate((valid) => {
         if (valid) {
-          if (this.diaryData.id) {
-            this.formData = this.formData.map((item, index) => {
-              if (index === this.diaryDataIndex) {
-                item = this.diaryData
-              }
-              return item
-            })
-            this.$emit('save', this.formData)
+          if (this.diaryData._id) {
+            this.$emit('save', this.diaryData, this.diaryDataIndex)
           } else {
-            this.diaryData.id = randomToken(32)
-            this.$emit('add', this.diaryData)
+            this.$emit('add', this.diaryData, this.diaryDataIndex)
           }
           this.diaryShow = false
         }
@@ -187,8 +187,10 @@ export default {
   },
   watch: {
     tableData(newVal) {
-      console.log(`${newVal}---1`)
       this.formData = newVal
+    },
+    diaryData(newVal) {
+      console.log(newVal)
     }
   },
   components: {

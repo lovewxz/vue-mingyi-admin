@@ -35,7 +35,7 @@
       <el-tag :key="tag" v-for="tag in form.all_item" :closable="true" :close-transition="false" type="primary" class="tag-item">{{tag}}</el-tag>
     </el-form-item>
     <el-form-item label="相关日记">
-      <case-diary :table-data="form.sections" @save="diarySave" @add="diaryAdd" ref="caseDiary"></case-diary>
+      <case-diary :table-data="form.sections" @filter="diaryFitler" @save="diarySave" @add="diaryAdd" @del="diaryDel" @batchDel="diaryBatchDel" ref="caseDiary"></case-diary>
     </el-form-item>
   </el-form>
   <div slot="footer" class="dialog-footer">
@@ -106,15 +106,62 @@ export default {
     cancelBtn() {
       this.$router.back()
     },
-    async diarySave(diaryData) {
-      this.form.sections = diaryData
-      let params = this._formateResult(this.form)
-      await api.putPcase(params).then(res => {
-        console.log(res)
+    async diarySave(diaryData, diaryIndex) {
+      diaryData.article = util.removeURLToImage(diaryData.article)
+      await api.putDiary(diaryData).then(res => {
+        if (res.success) {
+          res.data.article = util.addURLToImage(res.data.article)
+          this.form.sections = this.form.sections.map((item, index) => {
+            if (index === diaryIndex) {
+              item = res.data
+            }
+            return item
+          })
+        }
+      })
+      this.$refs.caseDiary.resetFields()
+    },
+    async diaryAdd(diaryData) {
+      diaryData.article = util.removeURLToImage(diaryData.article)
+      await api.saveDiary(diaryData).then(res => {
+        if(res.success) {
+          res.data.article = util.addURLToImage(res.data.article)
+          console.log(res.data)
+          this.form.sections.push(res.data)
+        }
+      })
+      this.$refs.caseDiary.resetFields()
+    },
+    diaryBatchDel(diaryArr) {
+      this.$confirm('确认删除吗?', '提示', {
+        type: 'warning'
+      }).then(async() => {
+        this.form.sections = this.form.sections.filter(item => {
+          let bool = true
+          diaryArr.forEach(diary => {
+            if (diary.id === item.id) {
+              bool = false
+            }
+          })
+          return bool
+        })
+        await this._updateDiary(this.form)
+      }, () => {
+        return
       })
     },
-    diaryAdd(diaryData) {
-      this.form.sections.push(diaryData)
+    diaryDel(index) {
+      this.$confirm('确认删除吗?', '提示', {
+        type: 'warning'
+      }).then(async() => {
+        this.form.sections.splice(index, 1)
+        await this._updateDiary(this.form)
+      }, () => {
+        return
+      })
+    },
+    diaryFitler(section) {
+      this.form.sections = section
     },
     _saveResult(data) {
       const _data = Object.assign({}, data)
@@ -144,7 +191,34 @@ export default {
       params.project = params.project._id
       params.compare_photo.before = util.removeURLToImage(params.compare_photo.before[0].url)
       params.compare_photo.after = util.removeURLToImage(params.compare_photo.after[0].url)
+      params.sections = params.sections.map(item => {
+        if (item.article) {
+          item.article = util.removeURLToImage(item.article)
+        }
+        return item
+      })
       return params
+    },
+    async _updateDiary(formData) {
+      const params = this._formateResult(formData)
+      await api.putPcase(params).then(async(result) => {
+        if (result.success) {
+          console.log(result.data)
+          await this._fetchPcaseById(this.$route.params.id)
+        }
+      })
+    },
+    async _fetchPcaseById(id) {
+      await api.fetchPcaseById(id).then(res => {
+        this.form = this._genResult(res)
+        console.log(this.form)
+        if (this.form.doctor) {
+          this.formExpertSelectVal = this.form.doctor._id
+        }
+        if (this.form.project) {
+          this.formProjectSelectVal = this.form.project._id
+        }
+      })
     }
   },
   async beforeCreate() {
@@ -180,19 +254,25 @@ export default {
         }
       })
     }
+
+    // if (!this.isAuthorized) {
+    //   await api.fetchDiaryById(this.$route.params.id).then(res => {
+    //     res = res.data
+    //     this.form.sections = res
+    //   }).catch(e => {
+    //     if (e.status === 402) {
+    //       this.isAuthorized = true
+    //       this.$message({
+    //         message: e.data,
+    //         type: 'error'
+    //       })
+    //     }
+    //   })
+    // }
   },
   async created() {
     if (this.$route.params.id && !this.isAuthorized) {
-      await api.fetchPcaseById(this.$route.params.id).then(res => {
-        this.form = this._genResult(res)
-        if (this.form.doctor) {
-          this.formExpertSelectVal = this.form.doctor._id
-        }
-        if (this.form.project) {
-          this.formProjectSelectVal = this.form.project._id
-        }
-        console.log(this.form)
-      })
+      await this._fetchPcaseById(this.$route.params.id)
     }
   },
   watch: {

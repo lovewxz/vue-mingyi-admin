@@ -12,7 +12,7 @@ export default {
     return data
   },
   removeURLToImage(data) {
-    const reg = new RegExp(`${config.imgCDN}`, 'ig')
+    const reg = new RegExp(`${config.imgCDN}\/`, 'ig')
     data = data.replace(reg, '')
     return data
   }

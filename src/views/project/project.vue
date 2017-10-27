@@ -83,7 +83,6 @@ export default {
         if (data.success && data.data.ok === 1) {
           await this.fetchProject(this.page, this.pageSize)
         }
-        console.log(data)
       }, () => {
         return
       })
