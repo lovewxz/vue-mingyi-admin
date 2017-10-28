@@ -92,6 +92,13 @@ let routes = [
         meta: {
           requiresAuth: true
         }
+      }, {
+        path: '/pcases/add',
+        component: PeopleCaseOperation,
+        name: '添加案例',
+        meta: {
+          requiresAuth: true
+        }
       }
     ]
   }, {

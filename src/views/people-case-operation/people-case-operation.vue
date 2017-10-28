@@ -32,12 +32,13 @@
       </el-select>
     </el-form-item>
     <el-form-item label="标签" v-if="form.all_item" prop="tag">
-      <el-tag :key="tag" v-for="tag in form.all_item" :closable="true" :close-transition="false" type="primary" class="tag-item">{{tag}}</el-tag>
-    </el-form-item>
-    <el-form-item label="相关日记">
-      <case-diary :table-data="form.sections" @filter="diaryFitler" @save="diarySave" @add="diaryAdd" @del="diaryDel" @batchDel="diaryBatchDel" ref="caseDiary"></case-diary>
+      <tag :tag-list="form.all_item"></tag>
     </el-form-item>
   </el-form>
+  <el-row v-show="diaryListShow">
+    <el-col>相关日记</el-col>
+  </el-row>
+  <case-diary :table-data="diaryList" @filter="diaryFitler" @save="diarySave" @add="diaryAdd" @del="diaryDel" @batchDel="diaryBatchDel" ref="caseDiary" v-show="diaryListShow"></case-diary>
   <div slot="footer" class="dialog-footer">
     <el-button @click.native="cancelBtn">取消</el-button>
     <el-button type="primary" @click.native="save" :loading="loading">提交</el-button>
@@ -50,6 +51,8 @@ import api from 'js/axios'
 import config from 'js/config'
 import Upload from 'components/upload/upload'
 import CaseDiary from 'components/case-diary/case-diary'
+import Tag from 'components/tag/tag'
+import randomToken from 'random-token'
 
 export default {
   data() {
@@ -69,13 +72,10 @@ export default {
           before: [],
           after: []
         },
-        all_item: [],
-        sections: [{
-          title: '',
-          article: '',
-          text: ''
-        }]
+        all_item: []
       },
+      diaryListShow: true,
+      diaryList: [],
       doctors: [],
       projects: [],
       formExpertSelectVal: '',
@@ -88,17 +88,17 @@ export default {
     save() {
       this.$refs.form.validate(async(valid) => {
         if (valid) {
-          console.log(this._saveResult(this.form))
-          // let data = ''
-          // if (this.$route.params.id) {
-          //   data = await api.putProject(this._saveResult(this.form))
-          // } else {
-          //   data = await api.saveProject(this._saveResult(this.form))
-          // }
-          // data.success ? this.$router.back() : this.$message({
-          //   message: data.err,
-          //   type: 'error'
-          // })
+          let res = ''
+          const data = this._saveResult(this.form)
+          if (this.$route.params.id) {
+            res = await api.putPcase(data)
+          } else {
+            res = await api.savePcase(data)
+          }
+          res.success ? this.$router.back() : this.$message({
+            message: res.err,
+            type: 'error'
+          })
         }
       })
     },
@@ -111,7 +111,7 @@ export default {
       await api.putDiary(diaryData).then(res => {
         if (res.success) {
           res.data.article = util.addURLToImage(res.data.article)
-          this.form.sections = this.form.sections.map((item, index) => {
+          this.diaryList = this.diaryList.map((item, index) => {
             if (index === diaryIndex) {
               item = res.data
             }
@@ -123,11 +123,12 @@ export default {
     },
     async diaryAdd(diaryData) {
       diaryData.article = util.removeURLToImage(diaryData.article)
+      diaryData.caseId = this.form._id
+      diaryData._id = randomToken(32)
       await api.saveDiary(diaryData).then(res => {
-        if(res.success) {
+        if (res.success) {
           res.data.article = util.addURLToImage(res.data.article)
-          console.log(res.data)
-          this.form.sections.push(res.data)
+          this.diaryList.push(res.data)
         }
       })
       this.$refs.caseDiary.resetFields()
@@ -136,38 +137,62 @@ export default {
       this.$confirm('确认删除吗?', '提示', {
         type: 'warning'
       }).then(async() => {
-        this.form.sections = this.form.sections.filter(item => {
-          let bool = true
-          diaryArr.forEach(diary => {
-            if (diary.id === item.id) {
-              bool = false
-            }
+        if (Array.isArray(diaryArr)) {
+          const options = []
+          diaryArr.forEach((item) => {
+            options.push(Object.assign({}, { _id: item._id }, { status: -1 }))
           })
-          return bool
-        })
-        await this._updateDiary(this.form)
+          let promises = options.map((option) => api.delDiary(option))
+          let results = await Promise.all(promises)
+          if (results) {
+            this.diaryList = this.diaryList.filter(item => {
+              let bool = true
+              diaryArr.forEach(diary => {
+                if (diary.id === item.id) {
+                  bool = false
+                }
+              })
+              return bool
+            })
+          }
+        }
       }, () => {
         return
       })
     },
-    diaryDel(index) {
+    diaryDel(index, diary) {
       this.$confirm('确认删除吗?', '提示', {
         type: 'warning'
       }).then(async() => {
-        this.form.sections.splice(index, 1)
-        await this._updateDiary(this.form)
+        const options = Object.assign({}, { _id: diary._id }, { status: -1 })
+        await api.delDiary(options).then(res => {
+          if (res.success && res.data.ok === 1) {
+            this.diaryList.splice(index, 1)
+          }
+        })
       }, () => {
         return
       })
     },
-    diaryFitler(section) {
-      this.form.sections = section
+    diaryFitler(keyword) {
+      if (!keyword) {
+        return
+      }
+      keyword = new RegExp(keyword, 'i')
+      this.diaryList = this.diaryList.filter(item => {
+        return item.article.match(keyword)
+      })
     },
     _saveResult(data) {
-      const _data = Object.assign({}, data)
-      _data.doctor = this.formSelectVal
-      _data.cover_image = _data.cover_image.map(item => item.url.replace(`${config.imgCDN}/`, ''))
-      _data.detail_images = _data.detail_images.map(item => item.url.replace(`${config.imgCDN}/`, ''))
+      const _data = JSON.parse(JSON.stringify(data))
+      _data.doctor = this.formExpertSelectVal
+      _data.project = this.formProjectSelectVal
+      const beforePhotoURL = util.removeURLToImage(_data.compare_photo.before[0].url)
+      const afterPhotoURL = util.removeURLToImage(_data.compare_photo.after[0].url)
+      _data.compare_photo = {
+        before: beforePhotoURL,
+        after: afterPhotoURL
+      }
       return _data
     },
     _genResult(data) {
@@ -175,48 +200,29 @@ export default {
         data.compare_photo.before = [{ name: data.compare_photo.before, url: `${config.imgCDN}/${data.compare_photo.before}` }]
         data.compare_photo.after = [{ name: data.compare_photo.after, url: `${config.imgCDN}/${data.compare_photo.after}` }]
       }
-      if (data.sections) {
-        data.sections = data.sections.map(item => {
-          if (item.article) {
-            item.article = util.addURLToImage(item.article)
-          }
-          return item
-        })
-      }
       return Object.assign({}, data)
-    },
-    _formateResult(data) {
-      let params = JSON.parse(JSON.stringify(data))
-      params.doctor = params.doctor._id
-      params.project = params.project._id
-      params.compare_photo.before = util.removeURLToImage(params.compare_photo.before[0].url)
-      params.compare_photo.after = util.removeURLToImage(params.compare_photo.after[0].url)
-      params.sections = params.sections.map(item => {
-        if (item.article) {
-          item.article = util.removeURLToImage(item.article)
-        }
-        return item
-      })
-      return params
-    },
-    async _updateDiary(formData) {
-      const params = this._formateResult(formData)
-      await api.putPcase(params).then(async(result) => {
-        if (result.success) {
-          console.log(result.data)
-          await this._fetchPcaseById(this.$route.params.id)
-        }
-      })
     },
     async _fetchPcaseById(id) {
       await api.fetchPcaseById(id).then(res => {
         this.form = this._genResult(res)
-        console.log(this.form)
         if (this.form.doctor) {
           this.formExpertSelectVal = this.form.doctor._id
         }
         if (this.form.project) {
           this.formProjectSelectVal = this.form.project._id
+        }
+      })
+    },
+    async _batchDiaryByCaseId(caseId) {
+      await api.batchDiaryByCaseId(caseId).then(res => {
+        if (res.success) {
+          const diary = res.data
+          this.diaryList = diary.map(item => {
+            if (item.article) {
+              item.article = util.addURLToImage(item.article)
+            }
+            return item
+          })
         }
       })
     }
@@ -254,37 +260,33 @@ export default {
         }
       })
     }
-
-    // if (!this.isAuthorized) {
-    //   await api.fetchDiaryById(this.$route.params.id).then(res => {
-    //     res = res.data
-    //     this.form.sections = res
-    //   }).catch(e => {
-    //     if (e.status === 402) {
-    //       this.isAuthorized = true
-    //       this.$message({
-    //         message: e.data,
-    //         type: 'error'
-    //       })
-    //     }
-    //   })
-    // }
   },
   async created() {
     if (this.$route.params.id && !this.isAuthorized) {
       await this._fetchPcaseById(this.$route.params.id)
+      await this._batchDiaryByCaseId(this.$route.params.id)
+    } else {
+      this.diaryListShow = false
     }
   },
   watch: {
     '$route' (to, from) {
       if (to.path.indexOf('add') > -1) {
+        console.log(1)
+        this.formExpertSelectVal = ''
+        this.formProjectSelectVal = ''
+        this.form.all_item = []
+        this.form.compare_photo = {}
+        this.diaryList = []
+        this.diaryListShow = false
         this.$refs.form.resetFields()
       }
     }
   },
   components: {
     Upload,
-    CaseDiary
+    CaseDiary,
+    Tag
   }
 }
 </script>
@@ -298,9 +300,6 @@ export default {
         .el-upload-list__item-thumbnail {
             width: auto;
         }
-    }
-    .tag-item {
-        margin-right: 10px;
     }
 }
 </style>

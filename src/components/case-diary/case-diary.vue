@@ -71,7 +71,6 @@ import Upload from 'components/upload/upload'
 import FilterBar from 'components/filter-bar/filter-bar'
 import Quill from 'quill'
 import { quillEditor } from 'vue-quill-editor'
-import randomToken from 'random-token'
 
 export default {
   props: {
@@ -112,14 +111,7 @@ export default {
       this.sels = sels
     },
     filter(keyword) {
-      if (!keyword) {
-        return this.formData
-      }
-      keyword = new RegExp(keyword, 'i')
-      this.formData = this.formData.filter(item => {
-        return item.article.match(keyword)
-      })
-      this.$emit('filter', this.formData)
+      this.$emit('filter', keyword)
     },
     handleAdd() {
       this.diaryShow = true
@@ -132,7 +124,7 @@ export default {
       this.uploadShow = false
     },
     handleDel(index, value) {
-      this.$emit('del', index)
+      this.$emit('del', index, value)
     },
     batchDel() {
       this.$emit('batchDel', this.sels)
@@ -188,9 +180,6 @@ export default {
   watch: {
     tableData(newVal) {
       this.formData = newVal
-    },
-    diaryData(newVal) {
-      console.log(newVal)
     }
   },
   components: {

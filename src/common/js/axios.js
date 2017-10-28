@@ -124,11 +124,16 @@ export default {
     })
   },
   fetchDiaryById(params) {
-    return instance.get(`/admin/diaries/${params}`).then(res => {
+    return instance.get(`/admin/diary/${params}`).then(res => {
       res = res.data
       return res.success
         ? res.data
         : res.err
+    })
+  },
+  batchDiaryByCaseId(caseId) {
+    return instance.get(`/admin/diaries/${caseId}`).then(res => {
+      return res.data
     })
   },
   putDiary(params) {
