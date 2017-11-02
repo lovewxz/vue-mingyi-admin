@@ -20,13 +20,13 @@
       <el-checkbox v-model="form.isTop">置顶</el-checkbox>
     </el-form-item>
     <el-form-item label="操作专家" prop="doctor">
-      <el-select placeholder="请选择专家" v-model="formExpertSelectVal">
+      <el-select placeholder="请选择专家" v-model="form.doctor">
         <el-option v-for="item in doctors" :key="item._id" :label="item.realname" :value="item._id">
         </el-option>
       </el-select>
     </el-form-item>
     <el-form-item label="关联项目" prop="project">
-      <el-select placeholder="请选择项目" v-model="formProjectSelectVal" style="width: 80%;">
+      <el-select placeholder="请选择项目" v-model="form.project" style="width: 80%;">
         <el-option v-for="item in projects" :key="item._id" :label="item.title" :value="item._id">
         </el-option>
       </el-select>
@@ -35,10 +35,12 @@
       <tag :tag-list="form.all_item"></tag>
     </el-form-item>
   </el-form>
-  <el-row v-show="diaryListShow">
-    <el-col>相关日记</el-col>
-  </el-row>
-  <case-diary :table-data="diaryList" @filter="diaryFitler" @save="diarySave" @add="diaryAdd" @del="diaryDel" @batchDel="diaryBatchDel" ref="caseDiary" v-show="diaryListShow"></case-diary>
+  <div v-show="diaryListShow">
+    <el-row>
+      <el-col>相关日记</el-col>
+    </el-row>
+    <case-diary :case-id="$route.params.id" :table-data="diaryList" @filter="diaryFitler" @del="diaryDel" @batchDel="diaryBatchDel" ref="caseDiary" ></case-diary>
+  </div>
   <div slot="footer" class="dialog-footer">
     <el-button @click.native="cancelBtn">取消</el-button>
     <el-button type="primary" @click.native="save" :loading="loading">提交</el-button>
@@ -72,14 +74,14 @@ export default {
           before: [],
           after: []
         },
-        all_item: []
+        all_item: [],
+        doctor: '',
+        project: ''
       },
       diaryListShow: true,
       diaryList: [],
       doctors: [],
       projects: [],
-      formExpertSelectVal: '',
-      formProjectSelectVal: '',
       isAuthorized: false // 是否验证过
     }
   },
@@ -90,6 +92,7 @@ export default {
         if (valid) {
           let res = ''
           const data = this._saveResult(this.form)
+          console.log(data)
           if (this.$route.params.id) {
             res = await api.putPcase(data)
           } else {
@@ -106,73 +109,19 @@ export default {
     cancelBtn() {
       this.$router.back()
     },
-    async diarySave(diaryData, diaryIndex) {
-      diaryData.article = util.removeURLToImage(diaryData.article)
-      await api.putDiary(diaryData).then(res => {
-        if (res.success) {
-          res.data.article = util.addURLToImage(res.data.article)
-          this.diaryList = this.diaryList.map((item, index) => {
-            if (index === diaryIndex) {
-              item = res.data
-            }
-            return item
-          })
-        }
-      })
-      this.$refs.caseDiary.resetFields()
-    },
-    async diaryAdd(diaryData) {
-      diaryData.article = util.removeURLToImage(diaryData.article)
-      diaryData.caseId = this.form._id
-      diaryData._id = randomToken(32)
-      await api.saveDiary(diaryData).then(res => {
-        if (res.success) {
-          res.data.article = util.addURLToImage(res.data.article)
-          this.diaryList.push(res.data)
-        }
-      })
-      this.$refs.caseDiary.resetFields()
-    },
     diaryBatchDel(diaryArr) {
-      this.$confirm('确认删除吗?', '提示', {
-        type: 'warning'
-      }).then(async() => {
-        if (Array.isArray(diaryArr)) {
-          const options = []
-          diaryArr.forEach((item) => {
-            options.push(Object.assign({}, { _id: item._id }, { status: -1 }))
-          })
-          let promises = options.map((option) => api.delDiary(option))
-          let results = await Promise.all(promises)
-          if (results) {
-            this.diaryList = this.diaryList.filter(item => {
-              let bool = true
-              diaryArr.forEach(diary => {
-                if (diary.id === item.id) {
-                  bool = false
-                }
-              })
-              return bool
-            })
-          }
-        }
-      }, () => {
-        return
-      })
-    },
-    diaryDel(index, diary) {
-      this.$confirm('确认删除吗?', '提示', {
-        type: 'warning'
-      }).then(async() => {
-        const options = Object.assign({}, { _id: diary._id }, { status: -1 })
-        await api.delDiary(options).then(res => {
-          if (res.success && res.data.ok === 1) {
-            this.diaryList.splice(index, 1)
+      this.diaryList = this.diaryList.filter(item => {
+        let bool = true
+        diaryArr.forEach(diary => {
+          if (diary.id === item.id) {
+            bool = false
           }
         })
-      }, () => {
-        return
+        return bool
       })
+    },
+    diaryDel(index) {
+      this.diaryList.splice(index, 1)
     },
     diaryFitler(keyword) {
       if (!keyword) {
@@ -185,8 +134,8 @@ export default {
     },
     _saveResult(data) {
       const _data = JSON.parse(JSON.stringify(data))
-      _data.doctor = this.formExpertSelectVal
-      _data.project = this.formProjectSelectVal
+      _data.doctor = this.form.doctor
+      _data.project = this.form.project
       const beforePhotoURL = util.removeURLToImage(_data.compare_photo.before[0].url)
       const afterPhotoURL = util.removeURLToImage(_data.compare_photo.after[0].url)
       _data.compare_photo = {
@@ -205,12 +154,9 @@ export default {
     async _fetchPcaseById(id) {
       await api.fetchPcaseById(id).then(res => {
         this.form = this._genResult(res)
-        if (this.form.doctor) {
-          this.formExpertSelectVal = this.form.doctor._id
-        }
-        if (this.form.project) {
-          this.formProjectSelectVal = this.form.project._id
-        }
+        this.form.doctor = this.form.doctor && res.doctor._id
+        this.form.project = this.form.project && res.project._id
+        console.log(this.form)
       })
     },
     async _batchDiaryByCaseId(caseId) {
@@ -273,10 +219,7 @@ export default {
     '$route' (to, from) {
       if (to.path.indexOf('add') > -1) {
         console.log(1)
-        this.formExpertSelectVal = ''
-        this.formProjectSelectVal = ''
-        this.form.all_item = []
-        this.form.compare_photo = {}
+        this.form = {}
         this.diaryList = []
         this.diaryListShow = false
         this.$refs.form.resetFields()

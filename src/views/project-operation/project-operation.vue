@@ -11,7 +11,7 @@
       <el-checkbox v-model="form.isTop">置顶</el-checkbox>
     </el-form-item>
     <el-form-item label="封面图" prop="cover_image">
-      <upload :upload-type="coverImg" :file-list="form.cover_image"></upload>
+      <upload :file-list="form.cover_image"></upload>
     </el-form-item>
     <el-form-item label="现价" prop="price" style="display:inline-block">
       <el-input v-model="form.price" auto-complete="off" placeholder="请输入现价">
@@ -24,7 +24,7 @@
       </el-input>
     </el-form-item>
     <el-form-item label="图片列表" prop="detail_images">
-      <upload :upload-type="detailImgs" :file-list="form.detail_images"></upload>
+      <upload :file-list="form.detail_images"></upload>
     </el-form-item>
     <el-form-item label="操作专家" prop="doctor">
       <el-select placeholder="请选择专家" v-model="formSelectVal">

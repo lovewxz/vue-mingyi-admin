@@ -51,6 +51,15 @@ export default {
   fetchQiniuToken(params) {
     return instance.get('/qiniu/uptoken', {params})
   },
+  waterMarkImage(params) {
+    return instance.post('/qiniu/watermark', params)
+  },
+  videoThumbnail(params) {
+    return instance.post('/qiniu/video', params)
+  },
+  refreshUrl(url) {
+    return instance.post('/qiniu/refresh', url)
+  },
   fetchProject(params) {
     return instance.get('/admin/projects', {params}).then(res => {
       res = res.data

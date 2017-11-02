@@ -6,8 +6,9 @@ import NotFound from './views/404'
 import Home from './views/Home'
 import Project from './views/project/project'
 import ProjectOperation from './views/project-operation/project-operation'
-import PeopleCase from './views/people-case/people-case.vue'
-import PeopleCaseOperation from './views/people-case-operation/people-case-operation.vue'
+import PeopleCase from './views/people-case/people-case'
+import PeopleCaseOperation from './views/people-case-operation/people-case-operation'
+import CaseDiaryOperation from './views/case-diary-operation/case-diary-operation'
 
 Vue.use(VueRouter)
 
@@ -96,6 +97,22 @@ let routes = [
         path: '/pcases/add',
         component: PeopleCaseOperation,
         name: '添加案例',
+        meta: {
+          requiresAuth: true
+        }
+      }, {
+        path: '/diary/edit/:id',
+        component: CaseDiaryOperation,
+        name: '编辑日记',
+        hidden: true,
+        meta: {
+          requiresAuth: true
+        }
+      }, {
+        path: '/diary/add',
+        component: CaseDiaryOperation,
+        name: '添加日记',
+        hidden: true,
         meta: {
           requiresAuth: true
         }

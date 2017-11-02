@@ -7,7 +7,8 @@
     :data="imgData"
     :file-list="fileList"
     :on-preview="handlePreview"
-    class="upload">
+    class="upload"
+    multiple>
     <i class="el-icon-plus"></i>
   </el-upload>
 </template>
@@ -20,7 +21,7 @@ export default {
   props: {
     uploadType: {
       type: String,
-      default: ''
+      default: 'image'
     },
     fileList: {
       type: Array,
@@ -33,34 +34,31 @@ export default {
     return {
       // pic
       imgData: {},
-      supportWebp: false
+      imgListKey: []
     }
   },
   methods: {
-    handlePreview(file,filelist) {
-      this.$emit('insert',file) // 预览暂时用作富文本编辑的插入
+    handlePreview(response, file) {
+      this.$emit('filePreview', response)
     },
-    handleSuccess(response, file) {
-      let key = response.key
-      let name = file.name
-      let prefix = this.supportWebp ? 'webp/' : ''
-      this.fileList.push({
-        name: file.name,
-        url: `${config.imgCDN}/${prefix}${encodeURI(key)}`
-      })
+    async handleSuccess(response, file, filelist) {
+      if (file.status === 'success') {
+        this.$emit('fileChange', file)
+      }
     },
     handleRemove(file, filelist) {
-      const index = this.fileList.findIndex(item => {
-        return item.uid === file.uid
-      })
-      this.fileList.splice(index, 1)
+      this.$emit('fileRemove', file)
     },
-    beforeUpload() {
+    async beforeUpload() {
       let key = randomToken(32)
-      const params = { key }
-      return api.fetchQiniuToken(params).then(res => {
+      let params = { key }
+      if (this.uploadType === 'image') {
+        params = Object.assign({}, params, {type: 'image'})
+      } else if (this.uploadType === 'video') {
+        params = Object.assign({}, params, {type: 'video'})
+      }
+      await api.fetchQiniuToken(params).then(res => {
         const response = res.data.data
-        this.supportWebp = response.supportWebp
         this.imgData = {
           key,
           token: response.upToken
