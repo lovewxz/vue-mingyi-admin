@@ -4,13 +4,13 @@
   <el-table :data="tableData" border @selection-change="selsChange">
     <el-table-column type="selection" width="55"></el-table-column>
     <el-table-column prop="title" label="日期" width="120"></el-table-column>
-    <el-table-column prop="article" label="文章">
-      <template scope="scope">
+    <el-table-column prop="article" label="文章" :show-overflow-tooltip="true">
+      <template slot-scope="scope">
           {{_subText(scope.row.article)}}
       </template>
     </el-table-column>
     <el-table-column label="操作" align="center" width="200">
-      <template scope="scope">
+      <template slot-scope="scope">
             <el-button
               size="small"
               @click="handleEdit(scope.$index, scope.row)"
@@ -137,7 +137,7 @@ export default {
       if (!str) {
         return
       }
-      str = `${util.removeHTMLTag(str).substring(0,50)}...`
+      str = util.removeHTMLTag(str)
       return str
     }
   },

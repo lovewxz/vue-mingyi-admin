@@ -51,8 +51,6 @@ import Upload from 'components/upload/upload'
 export default {
   data() {
     return {
-      coverImg: 'coverImg',
-      detailImgs: 'detailImgs',
       loading: false,
       formRules: {
         title: [
@@ -100,7 +98,7 @@ export default {
     },
     // 取消按钮
     cancelBtn() {
-      this.$router.push('/projects')
+      this.$router.back()
     },
     _saveResult(data) {
       const _data = Object.assign({}, data)

@@ -4,14 +4,19 @@
   <el-table :data="project" border @selection-change="selsChange" v-loading="listLoading">
     <el-table-column type="selection"></el-table-column>
     <el-table-column prop="title" label="标题" align="left"></el-table-column>
+    <el-table-column prop="cover_image" label="图片" align="center" width="150">
+      <template slot-scope="scope">
+        <img :src="`${imgCDN}/${scope.row.cover_image && scope.row.cover_image[0]}?imageView2/0/w/100/h/100`" alt="">
+      </template>
+    </el-table-column>
     <el-table-column prop="time" label="发布时间" align="center" width="200">
-      <template scope="scope">
+      <template slot-scope="scope">
         {{scope.row.meta.createdAt.split('T')[0]}}
       </template>
     </el-table-column>
     <el-table-column prop="category" label="分类" align="center" width="120"></el-table-column>
     <el-table-column label="操作" align="center" width="200">
-      <template scope="scope">
+      <template slot-scope="scope">
           <el-button
             size="small"
             @click="handleEdit(scope.$index, scope.row)"
@@ -40,7 +45,6 @@ import FilterBar from 'components/filter-bar/filter-bar'
 import axios from 'axios'
 import randomToken from 'random-token'
 
-const imgCDN = config.imgCDN
 export default {
   data() {
     return {
@@ -54,6 +58,7 @@ export default {
     }
   },
   async created() {
+    this.imgCDN = config.imgCDN
     await this.fetchProject(this.page, this.pageSize)
   },
   methods: {

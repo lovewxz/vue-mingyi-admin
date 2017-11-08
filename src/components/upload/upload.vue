@@ -2,12 +2,14 @@
   <el-upload list-type="picture-card"
     :on-success="handleSuccess"
     :on-remove="handleRemove"
+    :on-change="handleChange"
     :before-upload="beforeUpload"
     action="//up-z2.qiniu.com/"
     :data="imgData"
     :file-list="fileList"
     :on-preview="handlePreview"
     class="upload"
+    ref="upload"
     multiple>
     <i class="el-icon-plus"></i>
   </el-upload>
@@ -34,20 +36,32 @@ export default {
     return {
       // pic
       imgData: {},
-      imgListKey: []
+      fileListLen: 0
     }
   },
   methods: {
     handlePreview(response, file) {
       this.$emit('filePreview', response)
     },
-    async handleSuccess(response, file, filelist) {
-      if (file.status === 'success') {
-        this.$emit('fileChange', file)
+    handleSuccess(response, file, filelist) {
+      this.fileListLen = filelist.length
+    },
+    handleChange(file, filelist) {
+      const checkAllSuccess = filelist.every(item => item.status === 'success')
+      if (checkAllSuccess) {
+        this.$emit('processing')
+        filelist.forEach(async (item) => {
+          if (item.response && item.response.persistentId) {
+            await this._loopGetPrefopStatus(item.response.persistentId)
+          }
+        })
       }
     },
     handleRemove(file, filelist) {
-      this.$emit('fileRemove', file)
+      const index = this.fileList.findIndex((item) => {
+        return item.uid === file.uid
+      })
+      this.fileList.splice(index, 1)
     },
     async beforeUpload() {
       let key = randomToken(32)
@@ -63,15 +77,33 @@ export default {
           key,
           token: response.upToken
         }
-      }).catch(e => {
-        if (e.status === 402) {
-          this.$message({
-            message: e.data,
-            type: 'error'
-          })
-          return
-        }
       })
+    },
+    clearFiles() {
+      this.$refs.upload.clearFiles()
+    },
+    async _loopGetPrefopStatus(persistentId) {
+      let res = await api.prefopStatus(persistentId)
+      res = JSON.parse(res.data.data)
+      if (res.code === 0 && res.items) {
+        this.fileList.push({
+          name: res.items[0].key,
+          url: `${config.imgCDN}/${res.items[0].key}`
+        })
+        if (this.fileList.length === this.fileListLen) {
+          this.$emit('processed')
+        }
+      } else if (res.code === 3){
+        this.$message({
+          type: 'error',
+          message: '上传失败,请刷新重新上传'
+        })
+        return
+      } else {
+        setTimeout(async () => {
+          await this._loopGetPrefopStatus(persistentId)
+        }, 500)
+      }
     }
   }
 }

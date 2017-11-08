@@ -6,13 +6,13 @@
     <el-table-column prop="title" label="日记标题" align="left"></el-table-column>
     <el-table-column prop="user_name" label="模特姓名" align="left"></el-table-column>
     <el-table-column prop="time" label="发布时间" align="center" width="200">
-      <template scope="scope">
+      <template slot-scope="scope">
         {{scope.row.meta.createdAt.split('T')[0]}}
       </template>
     </el-table-column>
     <el-table-column prop="category" label="分类" align="center" width="120"></el-table-column>
     <el-table-column label="操作" align="center" width="200">
-      <template scope="scope">
+      <template slot-scope="scope">
           <el-button
             size="small"
             @click="handleEdit(scope.$index, scope.row)"
@@ -84,7 +84,6 @@ export default {
         if (data.success && data.data.ok === 1) {
           await this.fetchPcase(this.page, this.pageSize)
         }
-        console.log(data)
       }, () => {
         return
       })
@@ -119,7 +118,6 @@ export default {
       this.listLoading = false
       this.pcase = list.data
       this.total = list.total
-      console.log(this.pcase)
     }
   },
   components: {

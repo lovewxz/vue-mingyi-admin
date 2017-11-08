@@ -1,6 +1,6 @@
 <template>
 <div>
-  <el-row v-for="(item,index) in params" style="margin-bottom: 10px;">
+  <el-row v-for="(item,index) in params" style="margin-bottom: 10px;" :key="index">
     <el-col :span="5">
       <el-input v-model="item.key" placeHolder="属性"></el-input>
     </el-col>

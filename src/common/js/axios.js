@@ -1,6 +1,7 @@
 import axios from 'axios'
 import store from '../../vuex'
 import router from '../../routes'
+import { Message } from 'element-ui'
 
 //设置全局axios默认值
 axios.defaults.timeout = 5000 //5000的超时验证
@@ -29,7 +30,6 @@ instance.interceptors.response.use(response => {
     switch (error.response.status) {
       case 401:
         store.dispatch('userLogout') //可能是token过期，清除它
-        console.log(router.currentRoute)
         router.replace({ //跳转到登录页面
           path: '/login',
           query: {
@@ -39,6 +39,11 @@ instance.interceptors.response.use(response => {
         break
      case 402:
        store.dispatch('tokenExpired', true)
+       Message({
+         message: '登录过期',
+         type: 'error',
+         duration: 5 * 1000
+       })
     }
   }
   return Promise.reject(error.response)
@@ -59,6 +64,9 @@ export default {
   },
   refreshUrl(url) {
     return instance.post('/qiniu/refresh', url)
+  },
+  prefopStatus(persistentId) {
+    return instance.get(`/qiniu/prefopStatus?persistentId=${persistentId}`)
   },
   fetchProject(params) {
     return instance.get('/admin/projects', {params}).then(res => {

@@ -6,16 +6,6 @@
         <el-input v-model="diaryData.title" placeholder="请填写日期"></el-input>
       </el-col>
     </el-form-item>
-    <el-form-item class="upload-wrapper" v-if="uploadImgShow" label="上传图片">
-      <el-col>
-        <upload upload-type="image" @fileChange="fileChange" @fileRemove="fileRemove" @filePreview="filePreview"></upload>
-        <el-button @click="insertEditor">插入文章</el-button>
-        <el-button style="margin-left: 0;margin-top: 10px;">全部插入</el-button>
-      </el-col>
-    </el-form-item>
-    <el-form-item class="upload-wrapper" v-if="uploadVideoShow" label="插入视频">
-      <upload upload-type="video" :file-list="fileVideoList" @insert="insertEditor"></upload>
-    </el-form-item>
     <el-form-item label="选择案例" prop="caseId">
       <el-select placeholder="请选择案例" v-model="diaryData.caseId">
         <el-option v-for="item in pcase" :key="item._id" :label="item.user_name" :value="item._id">
@@ -29,13 +19,11 @@
             <button class="ql-bold">Bold</button>
             <button class="ql-italic">Italic</button>
             <select class="ql-size">
-                <option value="small"></option>
-                <option selected></option>
-                <option value="large"></option>
-                <option value="huge"></option>
-              </select>
-            <button class="ql-script" value="sub"></button>
-            <button class="ql-script" value="super"></button>
+              <option value="small">小号</option>
+              <option selected>普通</option>
+              <option value="large">大号</option>
+              <option value="huge">超大号</option>
+            </select>
             <el-button @click="uploadImgHandler" class="fa fa-file-image-o"></el-button>
             <el-button @click="uploadVideoHandler" class="fa fa-file-video-o" style="margin-left: 0;"></el-button>
           </div>
@@ -43,6 +31,20 @@
       </el-col>
     </el-form-item>
   </el-form>
+  <el-dialog :visible.sync="uploadImgShow" title="上传图片">
+    <upload upload-type="image" :file-list="fileList.image" ref="uploadImg" @processing="processing"  @processed="processed"></upload>
+    <div slot="footer" class="dialog-footer">
+      <el-button @click.native="uploadImgShow = false">取消</el-button>
+      <el-button type="primary" @click.native="insertEditor('image')" :disabled="btnStatus">确定</el-button>
+    </div>
+  </el-dialog>
+  <el-dialog :visible.sync="uploadVideoShow" title="上传视频">
+    <upload upload-type="video" :file-list="fileList.video" ref="uploadVideo" @processing="processing"  @processed="processed"></upload>
+    <div slot="footer" class="dialog-footer">
+      <el-button @click.native="uploadVideoShow = false">取消</el-button>
+      <el-button type="primary" @click.native="insertEditor('video')" :disabled="btnStatus">确定</el-button>
+    </div>
+  </el-dialog>
   <div slot="footer" class="dialog-footer">
     <el-button @click.native="diaryCancel">取消</el-button>
     <el-button type="primary" @click.native="diarySave">提交</el-button>
@@ -87,8 +89,11 @@ export default {
       uploadVideoShow: false,
       uploadImgShow: false,
       uploadType: 'image',
-      fileImgList: [],
-      fileVideoList: [],
+      fileList : {
+        image: [],
+        video: []
+      },
+      btnStatus: false,
       editorSelection: 0,
       isAuthorized: false,
     }
@@ -100,40 +105,45 @@ export default {
     onEditorChange({ editor, html, text }) {
       this.diaryData.article = html
     },
-    insertEditor() {
-      if (!this.fileImgList.length) {
+    insertEditor(type) {
+      if (!this.fileList[type].length) {
         return
       }
-      const key = this.fileImgList[0].response.key
       const quillHook = this.$refs.editor.quill
-      const url = `${config.imgCDN}/${key}`
-      if (this.editorSelection >= 0) {
-        quillHook.insertEmbed(this.editorSelection, 'image', url)
-      } else {
-        this.$message({
-          message: '请选择插入的位置',
-          type: 'error'
-        })
-      }
+      this.fileList[type].forEach((item) => {
+        const url = type === 'video' ? `${item.url}_video` : item.url
+        if (this.editorSelection === 0 || !this.editorSelection) {
+          quillHook.insertEmbed(0, type, url)
+        } else {
+          quillHook.insertEmbed(this.editorSelection, type, url)
+        }
+      })
+      setTimeout(() => {
+        let refs = type === 'video' ? this.$refs.uploadVideo : this.$refs.uploadVideo
+        refs.clearFiles()
+      }, 20)
+      this.fileList[type] = []
     },
     uploadImgHandler() {
-      this.uploadImgShow = !this.uploadImgShow
+      this.uploadImgShow = true
     },
     uploadVideoHandler() {
-      this.uploadVideoShow = !this.uploadVideoShow
+      this.uploadVideoShow = true
     },
-    fileChange(file) {
-      this.fileImgList.push(file)
-      console.log(this.fileImgList)
-    },
-    filePreview(key) {
-      console.log(key)
-    },
-    fileRemove(file) {
-      const index = this.fileImgList.findIndex((item) => {
-        return item.uid === file.uid
+    processing() {
+      this.btnStatus = true
+      this.$message({
+        type: 'warning',
+        message: '正在处理请稍后...'
       })
-      this.fileImgList.splice(index, 1)
+    },
+    processed() {
+      console.log(1)
+      this.btnStatus = false
+      this.$message({
+        type: 'success',
+        message: '处理成功'
+      })
     },
     diaryCancel() {
       this.$router.back()
