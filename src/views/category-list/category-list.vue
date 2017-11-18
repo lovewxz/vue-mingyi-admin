@@ -75,8 +75,17 @@ export default {
       this.cascaderDisabled = true
     },
     remove(node, data) {
-      const ids = this._getCascader(node)
-      ids.push(data._id)
+      const ids = [data._id]
+      let children = data.children
+      const getChildren = (children) => {
+        children.forEach(item => {
+          ids.push(item._id)
+          if(item.children) {
+            getChildren(item.children)
+          }
+        })
+      }
+      getChildren(children)
       this.$confirm('确认删除吗?', '提示', {
         type: 'warning'
       }).then(async () => {
@@ -96,7 +105,7 @@ export default {
         await this.fetchCategory()
       },() => {
         return
-      })  
+      })
     },
     renderContent(h, { node, data, store }) {
       return (
