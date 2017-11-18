@@ -171,6 +171,24 @@ export default {
       return res
     })
   },
+  fetchCategory() {
+    return instance.get('/admin/category').then(res => {
+      res = res.data
+      return res
+    })
+  },
+  saveCategory(params) {
+    return instance.post('/admin/category', params).then(res => {
+      res = res.data
+      return res
+    })
+  },
+  delCategory(params) {
+    return instance.post('/admin/category/del', params).then(res => {
+      res = res.data
+      return res
+    })
+  },
   fetchDoctor(params) {
     return instance.get('/admin/doctors', {params}).then(res => {
       res = res.data

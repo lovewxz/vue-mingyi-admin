@@ -9,6 +9,7 @@ import ProjectOperation from './views/project-operation/project-operation'
 import PeopleCase from './views/people-case/people-case'
 import PeopleCaseOperation from './views/people-case-operation/people-case-operation'
 import CaseDiaryOperation from './views/case-diary-operation/case-diary-operation'
+import CategoryList from './views/category-list/category-list'
 
 Vue.use(VueRouter)
 
@@ -35,7 +36,7 @@ let routes = [
     children: [
       {
         path: '/category',
-        component: Project,
+        component: CategoryList,
         name: '分类列表',
         meta: {
           requiresAuth: true

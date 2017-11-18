@@ -123,6 +123,7 @@ export default {
         refs.clearFiles()
       }, 20)
       this.fileList[type] = []
+      type === 'video' ? this.uploadVideoShow = false : this.uploadImgShow = false
     },
     uploadImgHandler() {
       this.uploadImgShow = true
@@ -138,7 +139,6 @@ export default {
       })
     },
     processed() {
-      console.log(1)
       this.btnStatus = false
       this.$message({
         type: 'success',

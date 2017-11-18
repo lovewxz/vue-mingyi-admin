@@ -7,7 +7,6 @@
     action="//up-z2.qiniu.com/"
     :data="imgData"
     :file-list="fileList"
-    :on-preview="handlePreview"
     class="upload"
     ref="upload"
     multiple>
@@ -40,9 +39,6 @@ export default {
     }
   },
   methods: {
-    handlePreview(response, file) {
-      this.$emit('filePreview', response)
-    },
     handleSuccess(response, file, filelist) {
       this.fileListLen = filelist.length
     },
@@ -63,7 +59,8 @@ export default {
       })
       this.fileList.splice(index, 1)
     },
-    async beforeUpload() {
+    async beforeUpload(file) {
+      console.log(file)
       let key = randomToken(32)
       let params = { key }
       if (this.uploadType === 'image') {
