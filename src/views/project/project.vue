@@ -4,6 +4,11 @@
   <el-table :data="project" border @selection-change="selsChange" v-loading="listLoading">
     <el-table-column type="selection"></el-table-column>
     <el-table-column prop="title" label="标题" align="left"></el-table-column>
+    <el-table-column prop="category" label="分类" align="center" width="120">
+      <template slot-scope="scope">
+        <el-tag v-if="scope.row.category.length > 0">{{getLastCate(scope.row.category)}}</el-tag>
+      </template>
+    </el-table-column>
     <el-table-column prop="cover_image" label="图片" align="center" width="150">
       <template slot-scope="scope">
         <img :src="`${imgCDN}/${scope.row.cover_image && scope.row.cover_image[0]}?imageView2/0/w/100/h/100`" alt="">
@@ -14,7 +19,6 @@
         {{scope.row.meta.createdAt.split('T')[0]}}
       </template>
     </el-table-column>
-    <el-table-column prop="category" label="分类" align="center" width="120"></el-table-column>
     <el-table-column label="操作" align="center" width="200">
       <template slot-scope="scope">
           <el-button
@@ -91,6 +95,12 @@ export default {
       }, () => {
         return
       })
+    },
+    getLastCate(data) {
+      if (data && data.length > 0) {
+        const cate = data.slice(-1)[0].name
+        return cate
+      }
     },
     // 过滤查询
     async filter(keyword) {

@@ -14,7 +14,7 @@
     </el-col>
     <el-dialog :visible.sync="showFlag" :show-close="false">
       <el-form :model="form" ref="cateForm">
-        <el-form-item label="选择栏目" prop="selectedCateList">
+        <el-form-item label="父级栏目" prop="selectedCateList">
           <el-cascader
             expand-trigger="hover"
             :options="cateList"
@@ -23,6 +23,7 @@
             style="width: 40%"
             placeholder="留空即为根组件"
             :disabled="cascaderDisabled"
+            :change-on-select="true"
           >
           </el-cascader>
         </el-form-item>
@@ -51,8 +52,9 @@ export default {
       },
       showFlag: false,
       form: {
+        _id: '',
         selectedCateList: [],
-        name: ''
+        name: '',
       },
       cascaderDisabled: false
     }
@@ -67,25 +69,30 @@ export default {
       this.form.selectedCateList = this._getCascader(node)
       this.form.selectedCateList.push(data._id)
       this.form.name = ''
+      this.form._id = ''
     },
     appendTop() {
       this.form.selectedCateList = []
       this.form.name = ''
+      this.form._id = ''
       this.showFlag = true
       this.cascaderDisabled = true
     },
+    edit(node, data) {
+      this.cascaderDisabled = false
+      this.showFlag = true
+      this.form.selectedCateList = this._getCascader(node)
+      this.form.name = data.name
+      this.form._id = data._id
+    },
     remove(node, data) {
-      const ids = [data._id]
       let children = data.children
-      const getChildren = (children) => {
-        children.forEach(item => {
-          ids.push(item._id)
-          if(item.children) {
-            getChildren(item.children)
-          }
-        })
+      let ids = this._getChildren(children)
+      if (!ids) {
+        ids = [data._id]
+      } else {
+        ids.push(data._id)
       }
-      getChildren(children)
       this.$confirm('确认删除吗?', '提示', {
         type: 'warning'
       }).then(async () => {
@@ -115,6 +122,7 @@ export default {
           </span>
           <span>
             <el-button type="success" icon="el-icon-plus" size="mini" on-click={ () => this.append(node, data) }></el-button>
+            <el-button type="warning" icon="el-icon-edit" size="mini" on-click={ () => this.edit(node, data) }></el-button>
             <el-button type="danger" icon="el-icon-delete" size="mini" on-click={ () => this.remove(node, data) }></el-button>
           </span>
         </span>
@@ -122,35 +130,74 @@ export default {
     },
     async save() {
       let selectedCateList = this.form.selectedCateList
-      let formData = {
-        name: this.form.name,
-        parentId: selectedCateList.length > 0 ? selectedCateList.slice(-1)[0] : '0',
-        topId: selectedCateList.length > 0 ? selectedCateList.slice(0, 1)[0] : '0'
-      }
-      await api.saveCategory(formData).then(res => {
-        if (res.success) {
-          this.$message({
-            type: 'success',
-            message: '新增成功'
-          })
-          this.showFlag = false
-        } else {
-          this.$message({
-            type: 'error',
-            message: '新增失败'
-          })
+      let formData = {}
+      if (this.form._id) {
+        let pidAndTid = {
+          parentId: selectedCateList.length > 0 ? selectedCateList.slice(-1)[0] : '0',
+          topId: selectedCateList.length > 0 ? selectedCateList.slice(0, 1)[0] : '0'
         }
-      })
+        formData = Object.assign({}, this.form, pidAndTid)
+        console.log(formData)
+        await api.putCategory(formData).then(res => {
+          if (res.success) {
+            this.$message({
+              type: 'success',
+              message: '修改成功'
+            })
+            this.showFlag = false
+          } else {
+            this.$message({
+              type: 'error',
+              message: '修改失败'
+            })
+          }
+        })
+      } else {
+        formData = {
+          name: this.form.name,
+          parentId: selectedCateList.length > 0 ? selectedCateList.slice(-1)[0] : '0',
+          topId: selectedCateList.length > 0 ? selectedCateList.slice(0, 1)[0] : '0'
+        }
+        await api.saveCategory(formData).then(res => {
+          if (res.success) {
+            this.$message({
+              type: 'success',
+              message: '新增成功'
+            })
+            this.showFlag = false
+          } else {
+            this.$message({
+              type: 'error',
+              message: '新增失败'
+            })
+          }
+        })
+      }
       await this.fetchCategory()
     },
     async fetchCategory() {
       const cateList = await api.fetchCategory().then((res) => {
-        console.log(res.success)
          if (res.success) {
            res = this._genResult(res.data)
            this.cateList = res
          }
       })
+    },
+    _getChildren(children) {
+      let ids = []
+      if (!children) {
+        return
+      }
+      if (!Array.isArray(children)) {
+        children = [children]
+      }
+      children.forEach(item => {
+        ids.push(item._id)
+        if(item.children) {
+          this._getChildren(item.children)
+        }
+      })
+      return ids
     },
     _getCascader(node) {
       let p = node.parent

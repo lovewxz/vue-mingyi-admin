@@ -189,6 +189,12 @@ export default {
       return res
     })
   },
+  putCategory(params) {
+    return instance.put('/admin/category', params).then(res => {
+      res = res.data
+      return res
+    })
+  },
   fetchDoctor(params) {
     return instance.get('/admin/doctors', {params}).then(res => {
       res = res.data

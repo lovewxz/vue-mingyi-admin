@@ -13,6 +13,9 @@
     <el-form-item label="封面图" prop="cover_image">
       <upload :file-list="form.cover_image"></upload>
     </el-form-item>
+    <el-form-item label="分类目录" prop="category">
+      <cate-cascader :selectedCateList="selectedCateList" @cateDataChange="cateDataChange"></cate-cascader>
+    </el-form-item>
     <el-form-item label="现价" prop="price" style="display:inline-block">
       <el-input v-model="form.price" auto-complete="off" placeholder="请输入现价">
         <template slot="prepend">¥</template>
@@ -47,14 +50,24 @@ import api from 'js/axios'
 import config from 'js/config'
 import ProjectParams from 'components/project-params/project-params'
 import Upload from 'components/upload/upload'
+import CateCascader from 'components/cate-cascader/cate-cascader'
 
 export default {
   data() {
+    const checkCate = (rule, value, callback) => {
+      if (!this.selectedCateList.length) {
+        return callback(new Error('分类不能为空'))
+      }
+      callback()
+    }
     return {
       loading: false,
       formRules: {
         title: [
           { required: true, message: '请输入标题', trigger: 'blur' }
+        ],
+        category: [
+          { required: true, validator: checkCate, trigger: 'blur' }
         ]
       },
       form: {
@@ -69,8 +82,10 @@ export default {
         }],
         detail_images: [],
         doctor: '',
-        isTop: false
+        isTop: false,
+        category: ''
       },
+      selectedCateList: [],
       doctors: [],
       formSelectVal: '',
       isAuthorized: false // 是否验证过
@@ -82,7 +97,7 @@ export default {
       this.$refs.form.validate(async(valid) => {
         if (valid) {
           this.addLoading = true
-          console.log(this._saveResult(this.form))
+          // console.log(this._saveResult(this.form))
           let data = ''
           if (this.$route.params.id) {
             data = await api.putProject(this._saveResult(this.form))
@@ -100,8 +115,12 @@ export default {
     cancelBtn() {
       this.$router.back()
     },
+    cateDataChange(newVal) {
+      this.selectedCateList = newVal
+    },
     _saveResult(data) {
       const _data = Object.assign({}, data)
+      _data.category = this.selectedCateList
       _data.doctor = this.formSelectVal
       _data.cover_image = _data.cover_image.map(item => item.url.replace(`${config.imgCDN}/`, ''))
       _data.detail_images = _data.detail_images.map(item => item.url.replace(`${config.imgCDN}/`, ''))
@@ -144,6 +163,8 @@ export default {
         if (this.form.doctor) {
           this.formSelectVal = this.form.doctor._id
         }
+        this.selectedCateList = this.form.category.map(item => parseInt(item))
+        console.log(this.selectedCateList)
       })
     }
   },
@@ -156,7 +177,8 @@ export default {
   },
   components: {
     ProjectParams,
-    Upload
+    Upload,
+    CateCascader
   }
 }
 </script>

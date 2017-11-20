@@ -19,6 +19,9 @@
     <el-form-item label="是否置顶" prop="isTop">
       <el-checkbox v-model="form.isTop">置顶</el-checkbox>
     </el-form-item>
+    <el-form-item label="选择栏目">
+      <cate-cascader :selectedCateList="selectedCateList" @cateDataChange="cateDataChange"></cate-cascader>
+    </el-form-item>
     <el-form-item label="操作专家" prop="doctor">
       <el-select placeholder="请选择专家" v-model="form.doctor">
         <el-option v-for="item in doctors" :key="item._id" :label="item.realname" :value="item._id">
@@ -55,6 +58,7 @@ import Upload from 'components/upload/upload'
 import CaseDiary from 'components/case-diary/case-diary'
 import Tag from 'components/tag/tag'
 import randomToken from 'random-token'
+import CateCascader from 'components/cate-cascader/cate-cascader'
 
 export default {
   data() {
@@ -82,7 +86,8 @@ export default {
       diaryList: [],
       doctors: [],
       projects: [],
-      isAuthorized: false // 是否验证过
+      isAuthorized: false, // 是否验证过
+      selectedCateList: []
     }
   },
   methods: {
@@ -132,8 +137,12 @@ export default {
         return item.article.match(keyword)
       })
     },
+    cateDataChange(newVal) {
+      this.selectedCateList = newVal
+    },
     _saveResult(data) {
       const _data = JSON.parse(JSON.stringify(data))
+      _data.category = this.selectedCateList
       _data.doctor = this.form.doctor
       _data.project = this.form.project
       const beforePhotoURL = util.removeURLToImage(_data.compare_photo.before[0].url)
@@ -149,6 +158,7 @@ export default {
         data.compare_photo.before = [{ name: data.compare_photo.before, url: `${config.imgCDN}/${data.compare_photo.before}` }]
         data.compare_photo.after = [{ name: data.compare_photo.after, url: `${config.imgCDN}/${data.compare_photo.after}` }]
       }
+      this.selectedCateList = data.category.map(item => parseInt(item))
       return Object.assign({}, data)
     },
     async _fetchPcaseById(id) {
@@ -229,7 +239,8 @@ export default {
   components: {
     Upload,
     CaseDiary,
-    Tag
+    Tag,
+    CateCascader
   }
 }
 </script>
